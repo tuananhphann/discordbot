@@ -32,11 +32,11 @@ def cleanup():
     import shutil
     try:
         shutil.rmtree(constants.TTS_PATH)
-        shutil.rmtree(constants.CUR_PATH+r"\__pycache__")
-        shutil.rmtree(constants.CUR_PATH+r"\cogs\__pycache__")
-        shutil.rmtree(constants.CUR_PATH+r"\cogs\components\__pycache__")
-        shutil.rmtree(constants.CUR_PATH+r"\cogs\music\__pycache__")
-        shutil.rmtree(constants.CUR_PATH+r"\cogs\tts\__pycache__")
+        shutil.rmtree(constants.CUR_PATH+r"/__pycache__")
+        shutil.rmtree(constants.CUR_PATH+r"/cogs/__pycache__")
+        shutil.rmtree(constants.CUR_PATH+r"/cogs/components/__pycache__")
+        shutil.rmtree(constants.CUR_PATH+r"/cogs/music/__pycache__")
+        shutil.rmtree(constants.CUR_PATH+r"/cogs/tts/__pycache__")
         print("Cleanup completed.")
     except:
         print("There are some errors when trying to delete garbages.")
