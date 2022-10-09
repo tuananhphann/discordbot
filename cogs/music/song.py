@@ -1,7 +1,22 @@
 class Song:
-    """Song object"""
+    """
+    Song object
 
-    def __init__(self, TITLE, URL, CHANNEL, VIEW_COUNT, DURATION, UPLOAD_DATE, THUMBNAIL, YT_URL) -> None:
+    property:
+        TITLE       (str): Title of this song.
+        URL         (str): URL to the audio source of this song.
+        CHANNEL     (str): The name of the channel that uploaded this song.
+        VIEW_COUNT  (str): views of this song. Seperated by ','.
+        DURATION    (str): length of this song. Format '%H:%M:%S'.
+        UPLOAD_DATE (str): The time the song was uploaded. Format '%d/%m/%Y'.
+        THUMBNAIL   (str): URL to the thumbnail.
+        YT_URL      (str): Direct URL to this song's Youtube page.
+    
+    method:
+        info (dict): Returns the entire property but as a dict.
+    """
+
+    def __init__(self, TITLE: str, URL: str, CHANNEL: str, VIEW_COUNT: str, DURATION: str, UPLOAD_DATE: str, THUMBNAIL: str, YT_URL: str) -> None:
         self.TITLE = TITLE
         self.URL = URL
         self.CHANNEL = CHANNEL
