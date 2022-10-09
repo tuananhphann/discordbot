@@ -14,12 +14,11 @@ class Search:
     def __init__(self):
         self.__ydl = youtube_dl.YoutubeDL(constants.YDL_OPTS)
 
-
     def __format_upload_date(self, upload_date: str) -> str:
         date = datetime.datetime.strptime(upload_date[:4] + "/" + upload_date[4:6] + "/" + upload_date[6:], "%Y/%m/%d")
         date = date.strftime("%d/%m/%Y")
         return date
-
+        
     def __format_duration(self, duration: str) -> str:
         return str(datetime.timedelta(seconds=duration))
 
