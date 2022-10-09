@@ -3,10 +3,12 @@ import asyncio
 import discord
 from discord.ext import commands
 
+import cogs
 from cogs.greetings import Greeting
 from cogs.music.music import Music
 from cogs.tts.tts import TTS
-from utils import get_env, cleanup
+from utils import cleanup, get_env, setup_logger
+
 
 class Bot(commands.Bot):
     def __init__(self):
@@ -14,9 +16,9 @@ class Bot(commands.Bot):
         intents.message_content = True
         super().__init__(command_prefix = "?", intents=intents)
 
-    async def setup_hook(self) -> None:
-        await self.tree.sync()
-        print(f"Synced slash command for {self.user}")
+    # async def setup_hook(self) -> None:
+    #     await self.tree.sync()
+    #     print(f"Synced slash command for {self.user}")
 
     async def on_command_error(self, ctx, error):
         await ctx.reply(error, ephemeral = True)
@@ -31,6 +33,8 @@ async def on_ready():
 
 
 async def main():
+    setup_logger('discord')
+    setup_logger('cogs')
     async with bot:
         TOKEN = get_env('TOKEN')
         await bot.add_cog(Music(bot))
@@ -42,7 +46,8 @@ try:
     asyncio.run(main())
 except KeyboardInterrupt:
     print("Bot ended by host.")
-except:
-    print("Bot ended because unknown reason.")
+except Exception as e:
+    print("Bot ended because under reasons.")
+    print(e)
 finally:
     cleanup()
