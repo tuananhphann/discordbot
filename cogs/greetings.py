@@ -21,6 +21,7 @@ class Greeting(commands.Cog):
 
     @commands.hybrid_command(name = "ping", with_app_command=True, description = "Test bot connection.")
     async def ping(self, ctx):
+        """Test connection of this bot."""
         if round(self.bot.latency * 1000) <= 50:
             embed=discord.Embed(title="PING", description=f":ping_pong: Pingpingpingpingping! The ping is **{round(self.bot.latency *1000)}** milliseconds!", color=0x44ff44)
         elif round(self.bot.latency * 1000) <= 100:

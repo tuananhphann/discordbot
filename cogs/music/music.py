@@ -1,7 +1,6 @@
-from discord.ext import commands
-
-from cogs.music.controller import Audio
 from cogs.components.discord_embed import Embed
+from cogs.music.controller import Audio
+from discord.ext import commands
 
 
 class Music(commands.Cog):
@@ -11,18 +10,20 @@ class Music(commands.Cog):
         self.player = Audio(bot)
 
     @commands.command()
-    async def p(self, ctx, *args):
-        track = ' '.join(args)
-        print("Search for:",track)
+    async def p(self, ctx, *track):
+        """Add a song to the playlist and play it."""
+        track = ' '.join(track)
         await self.player.process_track(ctx, track)
     
     @commands.command()
     async def pn(self, ctx, *args):
+        "You just found a great song and want to listen it right now. Use this command."
         track = ' '.join(args)
         await self.player.process_track(ctx, track, True)
     
     @commands.hybrid_command(name = "playlist", with_app_command=True, description = "Show the current playlist.")
     async def queue(self, ctx):
+        "Show the current playlist"
         if self.player.playlist.size() == 0:
             await ctx.send(embed = Embed(ctx).error(description="There are no songs in the playlist."))
         else:
@@ -31,6 +32,7 @@ class Music(commands.Cog):
     
     @commands.command()
     async def skip(self, ctx):
+        "This song is so terrible? Just use this command to skip."
         if ctx.voice_client.is_playing():
             ctx.voice_client.stop()
         else:
@@ -38,7 +40,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def stop(self, ctx: commands.Context):
-        "Clear the queue, stop playing music and leave the channel."
+        "Clear the playlist, stop playing music and leave the channel."
         self.player.playlist.clear()
         await ctx.voice_client.disconnect()
 
@@ -59,5 +61,5 @@ class Music(commands.Cog):
                 await ctx.author.voice.channel.connect(self_deaf=True)
             else:
                 await ctx.send("You are not connected to a voice channel.")
-                raise commands.CommandError(
-                    "Author not connected to a voice channel.")
+                # raise commands.CommandError(
+                #     "Author not connected to a voice channel.")
