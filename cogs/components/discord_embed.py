@@ -1,4 +1,6 @@
 import discord
+from cogs.music.song import Song
+from cogs.music.playlist import PlayList
 
 class Embed:
     """Discord embed templates"""
@@ -6,7 +8,10 @@ class Embed:
         self.ctx = ctx
         self.embed = discord.Embed()
 
-    def now_playing_song(self, song):
+    def help(self):
+        pass
+
+    def now_playing_song(self, song: Song):
         """Now playing template"""
         self.embed.title = "Now playing"
         self.embed.color = discord.Color.blue()
@@ -22,7 +27,7 @@ class Embed:
             text=f"Requested by {self.ctx.author.name}", icon_url=self.ctx.author.avatar.url)
         return self.embed
 
-    def in_playlist(self, playlist):
+    def in_playlist(self, playlist: PlayList):
         """playlist template"""
         self.embed.title = "In playlist"
         self.embed.color = discord.Color.green()
@@ -33,7 +38,7 @@ class Embed:
             text=f"Requested by {self.ctx.author.name}", icon_url=self.ctx.author.avatar.url)
         return self.embed
     
-    def add_song(self, song, position, timewait):
+    def add_song(self, song, position: int, timewait: str):
         self.embed.title = "Added song"
         self.embed.color = discord.Color.orange()
         self.embed.description = f"""
@@ -49,4 +54,12 @@ class Embed:
         self.embed.title = "Error"
         self.embed.color = discord.Color.red()
         self.embed.description = description
+        return self.embed
+
+    def tts_lang(self, lang_dict: dict):
+        self.embed.title = "Language List"
+        self.embed.color = discord.Color.green()
+        self.embed.description = ""
+        for lang in lang_dict:
+            self.embed.description += f"{lang}: {lang_dict[lang]}\n"
         return self.embed
