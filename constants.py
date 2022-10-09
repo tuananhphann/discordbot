@@ -2,8 +2,8 @@ import os
 # declare some constants 
 TTS_PATH = os.path.dirname(os.path.realpath(__file__))+r"/tts_tempfolder"
 CUR_PATH = os.path.dirname(os.path.realpath(__file__))
-YOUTUBE_PREFIX = "https://youtube.com"
-YDL_PREFIX = "https://youtube.com/watch?v="
+
+VOICE_TIMEOUT = 10*60
 
 YDL_OPTS = {
     'format':'bestaudio/best',
