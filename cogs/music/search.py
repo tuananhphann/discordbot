@@ -26,7 +26,7 @@ class Search:
         view_count = int(view_count)
         return "{:,}".format(view_count)
 
-    async def query(self, query: str) -> Song | int:
+    async def query(self, query: str):
         """Search by a name or URL.
         
         If success, return Song, else, return -1
