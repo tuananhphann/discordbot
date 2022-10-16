@@ -26,7 +26,7 @@ def get_time():
 
 def get_env(key: str) -> str:
     load_dotenv(find_dotenv())
-    TOKEN = os.environ.get("TOKEN")
+    TOKEN = os.environ.get(key)
     return TOKEN
 
 def setup_logger(name: str, level = logging.INFO):
@@ -46,16 +46,20 @@ def setup_logger(name: str, level = logging.INFO):
 def cleanup():
     """Clean garbages after bot end."""
     import shutil
+    def remove_dirs(curr_dir='./', del_dirs=['temp_folder', '__pycache__']):
+        for del_dir in del_dirs:
+            if del_dir in os.listdir(curr_dir):
+                shutil.rmtree(os.path.join(curr_dir, del_dir))
+
+        for dir in os.listdir(curr_dir):
+            dir = os.path.join(curr_dir, dir)
+            if os.path.isdir(dir):
+                remove_dirs(dir, del_dirs)
     try:
-        shutil.rmtree(constants.TTS_PATH)
-        shutil.rmtree(constants.CUR_PATH+r"/__pycache__")
-        shutil.rmtree(constants.CUR_PATH+r"/cogs/__pycache__")
-        shutil.rmtree(constants.CUR_PATH+r"/cogs/components/__pycache__")
-        shutil.rmtree(constants.CUR_PATH+r"/cogs/music/__pycache__")
-        shutil.rmtree(constants.CUR_PATH+r"/cogs/tts/__pycache__")
+        remove_dirs(curr_dir=constants.CUR_PATH)
         print("Cleanup completed.")
-    except:
-        print("There are some errors when trying to delete garbages.")
+    except Exception as e:
+        print("There are some errors when trying to delete garbages:", e)
 
 
 class Timer:

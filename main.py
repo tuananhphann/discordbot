@@ -7,6 +7,7 @@ import cogs
 from cogs.greetings import Greeting
 from cogs.music.music import Music
 from cogs.tts.tts import TTS
+from cogs.game_free.game_free import GameFree
 from utils import cleanup, get_env, setup_logger
 
 
@@ -34,12 +35,13 @@ async def on_ready():
 
 async def main():
     setup_logger('discord')
-    setup_logger('cogs')
+    setup_logger('cogs', level = 10)
     async with bot:
         TOKEN = get_env('TOKEN')
         await bot.add_cog(Music(bot))
         await bot.add_cog(Greeting(bot))
         await bot.add_cog(TTS(bot))
+        await bot.add_cog(GameFree(bot))
         await bot.start(TOKEN)
 
 try:

@@ -1,9 +1,12 @@
 import os
 # declare some constants 
-TTS_PATH = os.path.dirname(os.path.realpath(__file__))+r"/tts_tempfolder"
 CUR_PATH = os.path.dirname(os.path.realpath(__file__))
+TEMP_FOLDER = CUR_PATH + r"/temp_folder"
+BOT_DATA_FOLDER = CUR_PATH + r"/bot_data"
+GAMEFREE_CHANNEL_ID = 916965073765957672
 
 VOICE_TIMEOUT = 10*60
+RENEW_TIME = 6*60*60
 
 YDL_OPTS = {
     'format':'bestaudio/best',

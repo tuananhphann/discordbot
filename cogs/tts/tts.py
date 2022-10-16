@@ -15,13 +15,9 @@ _log = logging.getLogger(__name__)
 class TTS(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.path = constants.TTS_PATH
+        self.path = constants.TEMP_FOLDER
         self.file_name = r"\voice.mp3"
         self.full_path = self.path + self.file_name
-        try:
-            os.mkdir(self.path)
-            _log.info(f"{self.path} is created successfully.")
-        except: None
     
     async def tts(self, ctx, text: str, lang: str = "vi"):
         loop = asyncio.get_event_loop()

@@ -36,13 +36,13 @@ class Audio:
         self.timer = Timer(self.timeout_handle(ctx))
         source = discord.FFmpegPCMAudio(song.URL, **constants.FFMPEG_OPTIONS)
         embed = Embed(ctx).now_playing_song(song)
-        await ctx.send(embed = embed)
+        await ctx.reply(embed = embed)
         # await ctx.reply(embed=embed)
         ctx.voice_client.play(source, after=lambda e: self.play_next(ctx))
         self.current_song = song.TITLE
 
     async def process_track(self, ctx: commands.Context, track: str, priority: bool = False):
-        self.ctx = ctx
+        self.ctx = ctx #assign this context for timeout_handler can work.
         song = await Search().query(track)
         if song == -1:
             _log.error(f"Can not play this song '{track}'")

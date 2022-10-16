@@ -63,3 +63,18 @@ class Embed:
         for lang in lang_dict:
             self.embed.description += f"{lang}: {lang_dict[lang]}\n"
         return self.embed
+
+    def game_free(self, game):
+        if len(game['title']) > 256:
+            self.embed.title = game['title'][:253]+"..."
+        else:
+            self.embed.title = game['title']
+        self.embed.description = f"""
+        Link: {game['link']}
+        Posted by {game['author']}
+        Posting date: {game['date']}
+        Link post: {game['id']}
+        """
+        self.embed.color = 0xffa500
+        self.embed.set_footer(text = 'Reddit', icon_url = "https://i.imgur.com/sdO8tAw.png")
+        return self.embed
