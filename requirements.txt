@@ -5,3 +5,4 @@ youtube-dl
 youtube_search
 mutagen
 python-dotenv
+asyncpraw
