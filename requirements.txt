@@ -4,3 +4,4 @@ gTTS
 youtube-dl
 python-dotenv
 asyncpraw
+beautifulsoup4

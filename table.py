@@ -43,7 +43,6 @@ class Table:
                         string += f'"{val}", '
 
             sql = f"INSERT INTO {table_name} VALUES ({string})"
-        print(sql)
         self.cur.execute(sql)
         self.con.commit()
 
