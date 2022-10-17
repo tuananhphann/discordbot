@@ -37,9 +37,9 @@ class Greeting(commands.Cog):
     @commands.hybrid_command(name="sleep", with_app_command=True, description="Help your sleep better.")
     async def sleep(self, ctx):
         import datetime
-        current_time = datetime.datetime.now()
-        add_hours = datetime.timedelta(hours = 7)
-        current_date_and_time = current_time + add_hours
+        current_date_and_time = datetime.datetime.now()
+        # add_hours = datetime.timedelta(hours = 7)
+        # current_date_and_time = current_time + add_hours
         format_time_now = str(current_date_and_time)
         time_now = format_time_now[format_time_now.find(' ')+1:format_time_now.find('.')-3]
         hours = [4,6,7,9]
@@ -99,7 +99,7 @@ class Greeting(commands.Cog):
 
     @commands.command()
     async def speedtest(self, ctx):
-        s = speedtest.Speedtest()
+        s = speedtest.Speedtest(secure=True)
         server = s.get_best_server()
         await ctx.send(f"Host: {server['host']} in {server['name']}, {server['country']}")
         await ctx.send('Download testing...')
