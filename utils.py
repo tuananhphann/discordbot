@@ -55,11 +55,20 @@ def cleanup():
             dir = os.path.join(curr_dir, dir)
             if os.path.isdir(dir):
                 remove_dirs(dir, del_dirs)
+    def close_remaning_tasks():
+        tasks = asyncio.all_tasks()
+        print(f"Closing {len(tasks)} remaining tasks...")
+        for task in tasks:
+            task.cancel()
     try:
         remove_dirs(curr_dir=constants.CUR_PATH)
-        print("Cleanup completed.")
+        close_remaning_tasks()
+    except RuntimeError as err:
+        print("No more remaining tasks")
     except Exception as e:
         print("There are some errors when trying to delete garbages:", e)
+    finally:
+        print("Cleanup completed.")
 
 
 class Timer:
