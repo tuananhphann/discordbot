@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 import constants
 import discord
@@ -59,7 +60,7 @@ class TTS(commands.Cog):
     
     @commands.command()
     async def lang(self, ctx):
-        """Return a list of avaiable languages."""
+        """Return a list of languages avaiable."""
         embed = Embed(ctx).tts_lang(langs)
         await ctx.send(embed = embed)
 
