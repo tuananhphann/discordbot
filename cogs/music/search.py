@@ -3,9 +3,10 @@ import datetime
 import logging
 
 import constants
-import youtube_dl
+import yt_dlp as youtube_dl
 from cogs.music.song import Song
 from requests import get
+from discord.ext import commands
 
 _log = logging.getLogger(__name__)
 class Search:
@@ -26,7 +27,7 @@ class Search:
         view_count = int(view_count)
         return "{:,}".format(view_count)
 
-    async def query(self, query: str):
+    async def query(self, query: str, ctx: commands.Context) -> Song:
         """Search by a name or URL.
         
         If success, return Song, else, return -1
@@ -54,13 +55,15 @@ class Search:
                 return -1
                 
         song = Song(
-            video['title'],
-            video['url'],
-            video['channel'],
-            self.__format_view_count(video['view_count']),
-            self.__format_duration(video['duration']),
-            self.__format_upload_date(video['upload_date']),
-            video['thumbnail'],
-            video['webpage_url'])
+            TITLE=video['title'],
+            URL=video['url'],
+            CHANNEL=video['channel'],
+            VIEW_COUNT=self.__format_view_count(video['view_count']),
+            DURATION=self.__format_duration(video['duration']),
+            UPLOAD_DATE=self.__format_upload_date(video['upload_date']),
+            THUMBNAIL=video['thumbnail'],
+            YT_URL=video['webpage_url'],
+            CTX=ctx
+            )
 
         return song
