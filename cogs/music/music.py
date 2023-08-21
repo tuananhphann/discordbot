@@ -54,6 +54,7 @@ class Music(commands.Cog):
 
 
     @p.before_invoke
+    @pn.before_invoke
     @come.before_invoke
     async def ensure_voice(self, ctx: commands.Context):
         if ctx.voice_client is None:
