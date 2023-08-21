@@ -7,7 +7,7 @@ from cogs.greetings import Greeting
 from cogs.music.music import Music
 from cogs.tts.tts import TTS
 from cogs.game_free.game_free import GameFree
-from .utils import cleanup, get_env, setup_logger
+from utils import cleanup, get_env, setup_logger
 
 
 class Bot(commands.Bot):
