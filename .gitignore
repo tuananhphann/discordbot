@@ -10,8 +10,9 @@ Scripts/
 share/
 pyvenv.cfg
 music_example.py
-test.py
+test*
 *.log
+*.json
 
 # C extensions
 *.so
