@@ -29,24 +29,29 @@ def get_env(key: str) -> str:
     TOKEN = os.environ.get(key)
     return TOKEN
 
-def setup_logger(name: str, level = logging.INFO):
+
+def setup_logger(name: str, level=logging.INFO):
     logger = logging.getLogger(name)
     logger.setLevel(level)
     handler = logging.handlers.RotatingFileHandler(
-        filename=constants.CUR_PATH+'/discord.log',
-        encoding='utf-8',
+        filename=constants.CUR_PATH + "/discord.log",
+        encoding="utf-8",
         maxBytes=32 * 1024 * 1024,  # 32 MiB
         backupCount=5,  # Rotate through 5 files
     )
-    dt_fmt = '%Y-%m-%d %H:%M:%S'
-    formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+    dt_fmt = "%Y-%m-%d %H:%M:%S"
+    formatter = logging.Formatter(
+        "[{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
+    )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
+
 
 def cleanup():
     """Clean garbages after bot end."""
     import shutil
-    def remove_dirs(curr_dir='./', del_dirs=['temp_folder', '__pycache__']):
+
+    def remove_dirs(curr_dir="./", del_dirs=["temp_folder", "__pycache__"]):
         for del_dir in del_dirs:
             if del_dir in os.listdir(curr_dir):
                 shutil.rmtree(os.path.join(curr_dir, del_dir))
@@ -55,11 +60,13 @@ def cleanup():
             dir = os.path.join(curr_dir, dir)
             if os.path.isdir(dir):
                 remove_dirs(dir, del_dirs)
+
     def close_remaning_tasks():
         tasks = asyncio.all_tasks()
         print(f"Closing {len(tasks)} remaining tasks...")
         for task in tasks:
             task.cancel()
+
     try:
         remove_dirs(curr_dir=constants.CUR_PATH)
         close_remaning_tasks()
@@ -74,6 +81,7 @@ def cleanup():
 class Timer:
     """Auto execute a task when the time is out.
     This designed for auto disconnect feature."""
+
     def __init__(self, callback) -> None:
         self.__callback = callback
         self.__task = asyncio.create_task(self.__job())
@@ -84,4 +92,3 @@ class Timer:
 
     def cancel(self):
         self.__task.cancel()
-
