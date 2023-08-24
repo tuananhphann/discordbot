@@ -1,9 +1,14 @@
+from typing import Deque
+
 import discord
-from cogs.music.song import Song
+
 from cogs.music.playlist import PlayList
+from cogs.music.song import Song
+
 
 class Embed:
     """Discord embed templates"""
+
     def __init__(self, ctx):
         self.ctx = ctx
         self.embed = discord.Embed()
@@ -24,20 +29,26 @@ class Embed:
         """
         self.embed.set_thumbnail(url=song.THUMBNAIL)
         self.embed.set_footer(
-            text=f"Requested by {self.ctx.author.name}", icon_url=self.ctx.author.avatar.url)
+            text=f"Requested by {self.ctx.author.name}",
+            icon_url=self.ctx.author.avatar.url,
+        )
         return self.embed
 
-    def in_playlist(self, playlist: PlayList):
+    def in_playlist(self, playlist: Deque[Song]) -> "Embed":
         """playlist template"""
         self.embed.title = "In playlist"
         self.embed.color = discord.Color.green()
         self.embed.description = ""
         for song in playlist:
-            self.embed.description += f"{playlist.index(song)+1}. [{song.TITLE}]({song.YT_URL})\n"
+            self.embed.description += (
+                f"{playlist.index(song)+1}. [{song.TITLE}]({song.YT_URL})\n"
+            )
         self.embed.set_footer(
-            text=f"Requested by {self.ctx.author.name}", icon_url=self.ctx.author.avatar.url)
+            text=f"Requested by {self.ctx.author.name}",
+            icon_url=self.ctx.author.avatar.url,
+        )
         return self.embed
-    
+
     def add_song(self, song, position: int, timewait: str):
         self.embed.title = "Added song"
         self.embed.color = discord.Color.orange()
@@ -47,7 +58,9 @@ class Embed:
         Estimate time to this song: {timewait}
         """
         self.embed.set_footer(
-            text=f"Requested by {self.ctx.author.name}", icon_url=self.ctx.author.avatar.url)
+            text=f"Requested by {self.ctx.author.name}",
+            icon_url=self.ctx.author.avatar.url,
+        )
         return self.embed
 
     def error(self, description: str):
@@ -65,16 +78,16 @@ class Embed:
         return self.embed
 
     def game_free(self, game):
-        if len(game['title']) > 256:
-            self.embed.title = game['title'][:253]+"..."
+        if len(game["title"]) > 256:
+            self.embed.title = game["title"][:253] + "..."
         else:
-            self.embed.title = game['title']
+            self.embed.title = game["title"]
         self.embed.description = f"""
         Link: {game['link']}
         Posted by {game['author']}
         Posting date: {game['date']}
         Link post: {game['id']}
         """
-        self.embed.color = 0xffa500
-        self.embed.set_footer(text = 'Reddit', icon_url = "https://i.imgur.com/sdO8tAw.png")
+        self.embed.color = 0xFFA500
+        self.embed.set_footer(text="Reddit", icon_url="https://i.imgur.com/sdO8tAw.png")
         return self.embed
