@@ -1,66 +1,80 @@
 from discord.ext import commands
+from .album import Album
+from typing import Any
 
 
 class Song:
     """
-    Song object
+    Represents a song with various attributes and methods to access its information.
 
-    property:
-        TITLE       (str): Title of this song.
-        URL         (str): URL to the audio source of this song.
-        CHANNEL     (str): The name of the channel that uploaded this song.
-        VIEW_COUNT  (str): views of this song. Seperated by ','.
-        DURATION    (str): length of this song. Format '%H:%M:%S'.
-        UPLOAD_DATE (str): The time the song was uploaded. Format '%d/%m/%Y'.
-        THUMBNAIL   (str): URL to the thumbnail.
-        YT_URL      (str): Direct URL to this song's Youtube page.
-        CTX         (discord.ext.commands.Context): Context
+    Parameters:
+    - title (str): The title of the song.
+    - playback_url (str): The URL to play the song.
+    - uploader (str): The name of the uploader.
+    - playback_count (str): The number of times the song has been played.
+    - duration (str): The duration of the song.
+    - upload_date (str): The date when the song was uploaded.
+    - thumbnail (str): The URL to the thumbnail image of the song.
+    - webpage_url (str): The URL to the webpage of the song.
+    - category (str): The category of the song.
+    - context (commands.Context | None): The context in which the song is being used (if applicable).
 
-    method:
-        info (dict): Returns the entire property but as a dict.
+    Methods:
+    - __str__(): Returns a formatted string representation of the song's details.
+    - info(): Returns a dictionary containing the song's information.
     """
 
     def __init__(
         self,
-        TITLE: str,
-        URL: str,
-        CHANNEL: str,
-        VIEW_COUNT: str,
-        DURATION: str,
-        UPLOAD_DATE: str,
-        THUMBNAIL: str,
-        YT_URL: str,
-        CTX: commands.Context,
+        title: str,
+        playback_url: str,
+        uploader: str,
+        playback_count: str,
+        duration: str,
+        upload_date: str,
+        thumbnail: str,
+        webpage_url: str,
+        category: str,
+        album: Album | None,
+        context: commands.Context,
     ) -> None:
-        self.TITLE: str = TITLE
-        self.URL: str = URL
-        self.CHANNEL: str = CHANNEL
-        self.VIEW_COUNT: str = VIEW_COUNT
-        self.DURATION: str = DURATION
-        self.UPLOAD_DATE: str = UPLOAD_DATE
-        self.THUMBNAIL: str = THUMBNAIL
-        self.YT_URL: str = YT_URL
-        self.CTX = CTX
+        self.title: str = title
+        self.playback_url: str = playback_url
+        self.uploader: str = uploader
+        self.playback_count: str = playback_count
+        self.duration: str = duration
+        self.upload_date: str = upload_date
+        self.thumbnail: str = thumbnail
+        self.webpage_url: str = webpage_url
+        self.category: str = category
+        self.album = album
+        self.context = context
 
     def __str__(self) -> str:
         return f"""
-        [{self.TITLE}]({self.YT_URL})
-        Channel: {self.CHANNEL}
-        Views: {self.VIEW_COUNT}
-        Duration: {self.DURATION}
-        Upload date: {self.UPLOAD_DATE}
+        [{self.title}]({self.webpage_url})
+        Uploader: {self.uploader}
+        Playback counts: {self.playback_count}
+        Duration: {self.duration}
+        Upload date: {self.upload_date}
+        Category: {self.category}
+        Album: {self.album.title if self.album else None}
         """
 
-    def info(self) -> dict[str, str]:
-        "another way to access song info"
-        song: dict[str, str] = {
-            "TITLE": self.TITLE,
-            "URL": self.URL,
-            "CHANNEL": self.CHANNEL,
-            "VIEW_COUNT": self.VIEW_COUNT,
-            "DURATION": self.DURATION,
-            "UPLOAD_DATE": self.UPLOAD_DATE,
-            "THUMBNAIL": self.THUMBNAIL,
-            "YT_URL": self.YT_URL,
+    def info(self) -> dict[str, Any]:
+        """
+        Return a dictionary containing the song's information.
+        """
+        song: dict[str, Any] = {
+            "title": self.title,
+            "playback_url": self.playback_url,
+            "uploader": self.uploader,
+            "playback_count": self.playback_count,
+            "duration": self.duration,
+            "upload_date": self.upload_date,
+            "thumbnail": self.thumbnail,
+            "webpage_url": self.webpage_url,
+            "category": self.category,
+            "album": self.album,
         }
         return song

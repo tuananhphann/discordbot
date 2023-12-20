@@ -1,7 +1,7 @@
 from collections import deque
 
 from cogs.music.song import Song
-from utils import *
+from utils import convert_to_second, convert_to_time
 
 
 class PlayList:

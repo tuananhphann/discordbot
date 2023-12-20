@@ -21,27 +21,27 @@ class Embed:
         self.embed.title = "Now playing"
         self.embed.color = discord.Color.blue()
         self.embed.description = f"""
-        [{song.TITLE}]({song.YT_URL})
-        Channel: {song.CHANNEL}
-        Views: {song.VIEW_COUNT}
-        Duration: {song.DURATION}
-        Upload date: {song.UPLOAD_DATE}
+        [{song.title}]({song.webpage_url})
+        Uploader: {song.uploader}
+        Playback counts: {song.playback_count}
+        Duration: {song.duration}
+        Upload date: {song.upload_date}
         """
-        self.embed.set_thumbnail(url=song.THUMBNAIL)
+        self.embed.set_thumbnail(url=song.thumbnail)
         self.embed.set_footer(
             text=f"Requested by {self.ctx.author.name}",
             icon_url=self.ctx.author.avatar.url,
         )
         return self.embed
 
-    def in_playlist(self, playlist: Deque[Song]) -> "Embed":
+    def in_playlist(self, playlist: Deque[Song]):
         """playlist template"""
         self.embed.title = "In playlist"
         self.embed.color = discord.Color.green()
         self.embed.description = ""
         for song in playlist:
             self.embed.description += (
-                f"{playlist.index(song)+1}. [{song.TITLE}]({song.YT_URL})\n"
+                f"{playlist.index(song)+1}. [{song.title}]({song.webpage_url})\n"
             )
         self.embed.set_footer(
             text=f"Requested by {self.ctx.author.name}",
@@ -53,7 +53,7 @@ class Embed:
         self.embed.title = "Added song"
         self.embed.color = discord.Color.orange()
         self.embed.description = f"""
-        Song: [{song.TITLE}]({song.YT_URL})
+        Song: [{song.title}]({song.webpage_url})
         Position in playlist: {position}
         Estimate time to this song: {timewait}
         """

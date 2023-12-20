@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import logging
+from urllib.parse import urlparse
 
 import yt_dlp as youtube_dl
 from discord.ext import commands
@@ -8,6 +9,8 @@ from requests import get
 
 import constants
 from cogs.music.song import Song
+
+from .soundcloud import get_data
 
 _log = logging.getLogger(__name__)
 
@@ -26,13 +29,23 @@ class Search:
         return date
 
     def __format_duration(self, duration: str) -> str:
-        return str(datetime.timedelta(seconds=duration))
+        duration_fmt = datetime.timedelta(seconds=float(duration))
+        return str(duration_fmt)
 
     def __format_view_count(self, view_count: str) -> str:
-        view_count = int(view_count)
-        return "{:,}".format(view_count)
+        view_count_fmt = int(view_count)
+        return "{:,}".format(view_count_fmt)
 
-    async def query(self, query: str, ctx: commands.Context) -> Song:
+    def is_soundcloud(self, url: str):
+        parsed_url = urlparse(url)
+        netloc = parsed_url.netloc
+        domain = netloc.split(".")[0]
+        if domain.lower() == "soundcloud":
+            return True
+        else:
+            return False
+
+    async def query(self, query: str, ctx: commands.Context) -> Song | list[Song]:
         """Search by a name or URL.
 
         If success, return Song, else, return -1
@@ -59,23 +72,29 @@ class Search:
                 return -1
         else:
             try:
-                video = await loop.run_in_executor(
-                    None, lambda: self.__ydl.extract_info(query, download=False)
-                )
+                if self.is_soundcloud(query):
+                    print("Detected soundcloud URL")
+                    return get_data(query, ctx)
+                else:
+                    video = await loop.run_in_executor(
+                        None, lambda: self.__ydl.extract_info(query, download=False)
+                    )
             except Exception as e:
                 _log.error(e)
                 return -1
 
         song = Song(
-            TITLE=video["title"],
-            URL=video["url"],
-            CHANNEL=video["channel"],
-            VIEW_COUNT=self.__format_view_count(video["view_count"]),
-            DURATION=self.__format_duration(video["duration"]),
-            UPLOAD_DATE=self.__format_upload_date(video["upload_date"]),
-            THUMBNAIL=video["thumbnail"],
-            YT_URL=video["webpage_url"],
-            CTX=ctx,
+            title=video["title"],
+            playback_url=video["url"],
+            uploader=video["channel"],
+            playback_count=self.__format_view_count(video["view_count"]),
+            duration=self.__format_duration(video["duration"]),
+            upload_date=self.__format_upload_date(video["upload_date"]),
+            thumbnail=video["thumbnail"],
+            webpage_url=video["webpage_url"],
+            category=video["categories"][0],
+            album=None,
+            context=ctx,
         )
 
         return song
