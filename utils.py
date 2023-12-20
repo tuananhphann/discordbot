@@ -1,37 +1,39 @@
 import asyncio
-import datetime
 import logging
 import logging.handlers
 import os
-
+from datetime import datetime, timedelta
+from logging import Logger
+from typing import Union
 from dotenv import find_dotenv, load_dotenv
 
 import constants
 
 
-def convert_to_second(time: str):
-    dt = datetime.datetime.strptime(time, "%H:%M:%S") - datetime.datetime(1900, 1, 1)
+def convert_to_second(time: str) -> float:
+    parsed_datetime: datetime = datetime.strptime(time, "%H:%M:%S")
+    dt: timedelta = parsed_datetime - datetime(1900, 1, 1)
     return dt.total_seconds()
 
 
-def convert_to_time(seconds: int):
-    return str(datetime.timedelta(seconds=seconds))
+def convert_to_time(seconds: float) -> str:
+    return str(timedelta(seconds=seconds))
 
 
 def get_time():
-    dt = datetime.datetime.now().time()
+    dt = datetime.now().time()
     timestr = f"{dt.hour}:{dt.minute}:{dt.second}"
     return timestr
 
 
-def get_env(key: str) -> str:
-    load_dotenv(find_dotenv())
-    TOKEN = os.environ.get(key)
+def get_env(key: str) -> Union[str, None]:
+    load_dotenv(dotenv_path=find_dotenv())
+    TOKEN: str | None = os.environ.get(key)
     return TOKEN
 
 
-def setup_logger(name: str, level=logging.INFO):
-    logger = logging.getLogger(name)
+def setup_logger(name: str, level=logging.INFO) -> None:
+    logger: Logger = logging.getLogger(name)
     logger.setLevel(level)
     handler = logging.handlers.RotatingFileHandler(
         filename=constants.CUR_PATH + "/discord.log",
@@ -61,17 +63,8 @@ def cleanup():
             if os.path.isdir(dir):
                 remove_dirs(dir, del_dirs)
 
-    def close_remaning_tasks():
-        tasks = asyncio.all_tasks()
-        print(f"Closing {len(tasks)} remaining tasks...")
-        for task in tasks:
-            task.cancel()
-
     try:
         remove_dirs(curr_dir=constants.CUR_PATH)
-        close_remaning_tasks()
-    except RuntimeError as err:
-        print("No more remaining tasks")
     except Exception as e:
         print("There are some errors when trying to delete garbages:", e)
     finally:
@@ -82,13 +75,14 @@ class Timer:
     """Auto execute a task when the time is out.
     This designed for auto disconnect feature."""
 
-    def __init__(self, callback) -> None:
+    def __init__(self, callback, ctx) -> None:
         self.__callback = callback
+        self.ctx = ctx
         self.__task = asyncio.create_task(self.__job())
 
     async def __job(self):
         await asyncio.sleep(constants.VOICE_TIMEOUT)
-        await self.__callback
+        await self.__callback(self.ctx)
 
     def cancel(self):
         self.__task.cancel()
