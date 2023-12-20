@@ -36,30 +36,22 @@ class Table:
         self.cur.execute(f"DROP TABLE {table_name}")
 
     def addRecord(self, table_name: str, *values):
-        if len(values) == 1:
-            if "," in values[0]:
-                sql = f"INSERT INTO {table_name} VALUES ({values[0]})"
-        else:
-            string = ""
-            for val in values:
-                if isinstance(val, str):
-                    if values.index(val) == len(values) - 1:
-                        string += f'"{val}"'
-                    else:
-                        string += f'"{val}", '
+        params = []
+        if isinstance(values, str):
+            params = values.split(",")
+        elif isinstance(values, tuple):
+            params = values
 
-            sql = f"INSERT INTO {table_name} VALUES ({string})"
-        self.cur.execute(sql)
+        qmark = "?," * (len(params)-1) + "?"
+        sql = f"INSERT INTO {table_name} VALUES ({qmark})"
+
+        self.cur.execute(sql, params)
         self.con.commit()
 
     def checkRecord(self, table_name: str, value, property: str = "ID"):
-        if isinstance(value, str):
-            sql = (
-                f'SELECT EXISTS(SELECT 1 FROM {table_name} WHERE {property}="{value}");'
-            )
-        else:
-            sql = f"SELECT EXISTS(SELECT 1 FROM {table_name} WHERE {property}={value});"
-        data = self.cur.execute(sql).fetchone()
+        params = (value,)
+        sql = f"SELECT EXISTS(SELECT 1 FROM {table_name} WHERE {property}=?);"
+        data = self.cur.execute(sql, params).fetchone()
         if data[0] == 1:
             return True
         return False
@@ -80,7 +72,7 @@ class Table:
     def query(self, query: str, commit=False):
         """Basic query to the database like query for records or insert records."""
         self.cur.execute(query)
-        if commit == True:
+        if commit is True:
             self.con.commit()
         else:
             return self.cur.fetchall()
