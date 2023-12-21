@@ -1,5 +1,5 @@
 import logging
-from typing import Union
+from typing import Union, Optional
 
 import discord
 from discord.ext import commands
@@ -50,9 +50,21 @@ class Audio:
         self, ctx: commands.Context, track: str, priority: bool = False
     ) -> None:
         self.ctx = ctx  # assign this context for timeout_handler can work.
-        song = await Search().query(track, ctx)
-        if song == -1:
-            _log.error(f"Can not play this song '{track}'")
+        query_result = await Search().query(track, ctx)
+
+        if query_result is None:
+            _log.error(f"Can not process this query '{track}'")
+            return
+
+        if isinstance(query_result, Song):
+            song = query_result
+            _log.info("Added 1 song to the playlist.")
+        elif isinstance(query_result, list):
+            song = query_result[0]
+            for i in range(1, len(query_result)):
+                self.playlist.add(query_result[i])
+            _log.info(f"Added {len(query_result)} songs to the playlist.")
+        else:
             return
 
         if self.current_song is None:
