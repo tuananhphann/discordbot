@@ -45,31 +45,35 @@ class Search:
         else:
             return False
 
-    async def query(self, query: str, ctx: commands.Context) -> Song | list[Song]:
+    async def query(self, query: str, ctx: commands.Context) -> Song | list[Song] | None:
         """Search by a name or URL.
 
-        If success, return Song, else, return -1
+        If success, return Song or list[Song], else, return None
 
         return:
-            Song object
-        or  int: -1"""
+            Song object or list of Song objects
+        or  None"""
         loop = asyncio.get_event_loop()
         _log.info(f"Searching for '{query}'.")
 
         try:
             get(query)
-        except:
+        except Exception:
             try:
                 video = await loop.run_in_executor(
                     None,
-                    lambda: self.__ydl.extract_info(
-                        f"ytsearch:{query}", download=False
-                    )["entries"][0],
+                    lambda: self.__ydl.extract_info(f"ytsearch:{query}", download=False),
                 )
-                _log.info(f"Extract info from '{query}' successfully.")
+
+                if video is not None:
+                    video = video["entries"][0]
+                    _log.info(f"Extract info from '{query}' successfully.")
+                else:
+                    _log.error(f"Cannot extract info from '{query}'.")
+
             except Exception as e:
                 _log.error(e)
-                return -1
+                return None
         else:
             try:
                 if self.is_soundcloud(query):
@@ -81,20 +85,22 @@ class Search:
                     )
             except Exception as e:
                 _log.error(e)
-                return -1
+                return None
 
-        song = Song(
-            title=video["title"],
-            playback_url=video["url"],
-            uploader=video["channel"],
-            playback_count=self.__format_view_count(video["view_count"]),
-            duration=self.__format_duration(video["duration"]),
-            upload_date=self.__format_upload_date(video["upload_date"]),
-            thumbnail=video["thumbnail"],
-            webpage_url=video["webpage_url"],
-            category=video["categories"][0],
-            album=None,
-            context=ctx,
-        )
+        if isinstance(video, dict):
+            song = Song(
+                title=video["title"],
+                playback_url=video["url"],
+                uploader=video["channel"],
+                playback_count=self.__format_view_count(video["view_count"]),
+                duration=self.__format_duration(video["duration"]),
+                upload_date=self.__format_upload_date(video["upload_date"]),
+                thumbnail=video["thumbnail"],
+                webpage_url=video["webpage_url"],
+                category=video["categories"][0],
+                album=None,
+                context=ctx,
+            )
+            return song
 
-        return song
+        return None

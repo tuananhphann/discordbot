@@ -27,7 +27,7 @@ class PlayList:
     def time_wait(self) -> str:
         sec = 0
         for i in range(len(self.q)):
-            sec += convert_to_second(time=self.q[i].DURATION)
+            sec += convert_to_second(time=self.q[i].duration)
         return convert_to_time(seconds=sec)
 
     def get_list(self):
