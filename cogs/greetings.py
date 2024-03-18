@@ -3,6 +3,7 @@ import requests
 import speedtest
 from bs4 import BeautifulSoup
 from discord.ext import commands
+from discord import app_commands
 
 
 class Greeting(commands.Cog):
@@ -11,7 +12,7 @@ class Greeting(commands.Cog):
         self._last_member = None
 
     @commands.command()
-    async def hello(self, ctx, member: discord.member = None, *args):
+    async def hello(self, ctx, member: discord.Member | None = None, *args):
         """Just say hello"""
         member = member or ctx.author
 
@@ -21,11 +22,10 @@ class Greeting(commands.Cog):
             await ctx.send(f"Hey, {member.name}. Glad to see you again!")
         self._last_member = member
 
-    @commands.hybrid_command(
-        name="ping", with_app_command=True, description="Test bot connection."
-    )
-    async def ping(self, ctx):
+    @app_commands.command(name="ping", description="Test bot connection.")
+    async def ping(self, interaction):
         """Test connection of this bot."""
+        ctx = await self.bot.get_context(interaction)
         if round(self.bot.latency * 1000) <= 50:
             embed = discord.Embed(
                 title="PING",
@@ -52,10 +52,9 @@ class Greeting(commands.Cog):
             )
         await ctx.send(embed=embed)
 
-    @commands.hybrid_command(
-        name="sleep", with_app_command=True, description="Help your sleep better."
-    )
-    async def sleep(self, ctx):
+    @app_commands.command(name="sleep", description="Help your sleep better.")
+    async def sleep(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
         import datetime
 
         current_date_and_time = datetime.datetime.now()
@@ -63,7 +62,7 @@ class Greeting(commands.Cog):
         # current_date_and_time = current_time + add_hours
         format_time_now = str(current_date_and_time)
         time_now = format_time_now[
-            format_time_now.find(" ") + 1 : format_time_now.find(".") - 3
+            format_time_now.find(" ") + 1: format_time_now.find(".") - 3
         ]
         hours = [4, 6, 7, 9]
         minutes = [44, 14, 44, 14]
@@ -72,9 +71,9 @@ class Greeting(commands.Cog):
         i = 0
 
         def session():
-            if format_time >= 0 and format_time < 12:
+            if 0 <= format_time < 12:
                 session = "sáng"
-            elif format_time >= 12 and format_time < 18:
+            elif 12 <= format_time < 18:
                 session = "chiều"
             elif format_time >= 18:
                 session = "tối"
@@ -87,10 +86,10 @@ class Greeting(commands.Cog):
             future_date_and_time = current_date_and_time + hours_added + minute_added
             format_future_time = str(future_date_and_time)
             future_time = format_future_time[
-                format_future_time.find(" ") + 1 : format_future_time.find(".") - 3
+                format_future_time.find(" ") + 1: format_future_time.find(".") - 3
             ]
             time = format_future_time[
-                format_future_time.find(" ") + 1 : format_future_time.find(".") - 6
+                format_future_time.find(" ") + 1: format_future_time.find(".") - 6
             ]
             format_time = int(time)
             time_ses = session()
@@ -146,10 +145,9 @@ class Greeting(commands.Cog):
             f"Result:\nDownload speed: {download} Mbps = {round(float(download)*0.125, 2)} MB/s\nUpload speed: {upload} Mbps = {round(float(upload)*0.125, 2)} MB/s\nPing: {ping} ms"
         )
 
-    @commands.hybrid_command(
-        name="dogimg", with_app_command=True, description="Get a random dog image."
-    )
-    async def dogimg(self, ctx):
+    @app_commands.command(name="dogimg", description="Get a random dog image.")
+    async def dogimg(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
         img = requests.get("https://dog.ceo/api/breeds/image/random").json()
         fact = requests.get("https://some-random-api.ml/facts/dog").json()
         embed = discord.Embed(title="Dog", color=discord.Color.purple())  # Create embed
@@ -157,10 +155,9 @@ class Greeting(commands.Cog):
         embed.set_footer(text="Fact: " + fact["fact"])
         await ctx.send(embed=embed)
 
-    @commands.hybrid_command(
-        name="catimg", with_app_command=True, description="Get a random cat image."
-    )
-    async def catimg(self, ctx):
+    @app_commands.command(name="catimg", description="Get a random cat image.")
+    async def catimg(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
         img = requests.get("https://some-random-api.ml/img/cat").json()
         fact = requests.get("https://some-random-api.ml/facts/cat").json()
         embed = discord.Embed(title="Cat", color=discord.Color.purple())  # Create embed
@@ -168,11 +165,10 @@ class Greeting(commands.Cog):
         embed.set_footer(text="Fact: " + fact["fact"])
         await ctx.send(embed=embed)
 
-    @commands.hybrid_command(
-        name="meme", with_app_command=True, description="Get a random meme."
-    )
-    async def meme(self, ctx):
-        getMeme = requests.get(f"https://some-random-api.ml/meme").json()
+    @app_commands.command(name="meme", description="Get a random meme.")
+    async def meme(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
+        getMeme = requests.get("https://some-random-api.ml/meme").json()
         image = getMeme["image"]
         caption = getMeme["caption"]
         embed = discord.Embed(
