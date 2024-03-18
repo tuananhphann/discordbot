@@ -1,16 +1,10 @@
-import asyncio
-import datetime
 import logging
-from urllib.parse import urlparse
+import urllib.parse
+from typing import List
 
-import yt_dlp as youtube_dl
-from discord.ext import commands
-from requests import get
-
-import constants
+from cogs.music.extractor import ExtractorFactory
 from cogs.music.song import Song
-
-from .soundcloud import get_data
+from discord.ext import commands
 
 _log = logging.getLogger(__name__)
 
@@ -18,26 +12,18 @@ _log = logging.getLogger(__name__)
 class Search:
     "Methods: query"
 
-    def __init__(self):
-        self.__ydl = youtube_dl.YoutubeDL(constants.YDL_OPTS)
-
-    def __format_upload_date(self, upload_date: str) -> str:
-        date = datetime.datetime.strptime(
-            upload_date[:4] + "/" + upload_date[4:6] + "/" + upload_date[6:], "%Y/%m/%d"
-        )
-        date = date.strftime("%d/%m/%Y")
-        return date
-
-    def __format_duration(self, duration: str) -> str:
-        duration_fmt = datetime.timedelta(seconds=float(duration))
-        return str(duration_fmt)
-
-    def __format_view_count(self, view_count: str) -> str:
-        view_count_fmt = int(view_count)
-        return "{:,}".format(view_count_fmt)
+    def is_url(self, url_string):
+        try:
+            # Attempt to parse the URL
+            result = urllib.parse.urlparse(url_string)
+            # Check if all parts are defined (excluding fragment)
+            return all([result.scheme, result.netloc, result.path])
+        except (ValueError, AttributeError):
+            # If parsing fails, the string is not a URL
+            return False
 
     def is_soundcloud(self, url: str):
-        parsed_url = urlparse(url)
+        parsed_url = urllib.parse.urlparse(url)
         netloc = parsed_url.netloc
         domain = netloc.split(".")[0]
         if domain.lower() == "soundcloud":
@@ -45,62 +31,40 @@ class Search:
         else:
             return False
 
-    async def query(self, query: str, ctx: commands.Context) -> Song | list[Song] | None:
-        """Search by a name or URL.
+    async def query(
+        self, query: str, ctx: commands.Context, priority: bool = False
+    ) -> List[Song] | None:
 
-        If success, return Song or list[Song], else, return None
+        extractors = ExtractorFactory()
+        songs = []
 
-        return:
-            Song object or list of Song objects
-        or  None"""
-        loop = asyncio.get_event_loop()
-        _log.info(f"Searching for '{query}'.")
-
-        try:
-            get(query)
-        except Exception:
-            try:
-                video = await loop.run_in_executor(
-                    None,
-                    lambda: self.__ydl.extract_info(f"ytsearch:{query}", download=False),
+        if self.is_url(query):
+            if self.is_soundcloud(query):
+                songs = await extractors.get_extractor("soundcloud").get_data(
+                    query=query, ctx=ctx
+                )
+            else:
+                if "/playlist?" in query or "&list=" in query:
+                    songs = await extractors.get_extractor("youtube").get_data(
+                        query=query, ctx=ctx, is_playlist=True
+                    )
+                else:
+                    songs = await extractors.get_extractor("youtube").get_data(
+                        query=query, ctx=ctx
+                    )
+        else:
+            songs = await extractors.get_extractor("soundcloud").get_data(
+                query=query, ctx=ctx, is_search=True
+            )
+            if not songs:
+                songs = await extractors.get_extractor("youtube").get_data(
+                    query=query, ctx=ctx, is_search=True
                 )
 
-                if video is not None:
-                    video = video["entries"][0]
-                    _log.info(f"Extract info from '{query}' successfully.")
-                else:
-                    _log.error(f"Cannot extract info from '{query}'.")
-
-            except Exception as e:
-                _log.error(e)
-                return None
+        if songs:
+            if priority:
+                songs.reverse()
+            return songs
         else:
-            try:
-                if self.is_soundcloud(query):
-                    print("Detected soundcloud URL")
-                    return get_data(query, ctx)
-                else:
-                    video = await loop.run_in_executor(
-                        None, lambda: self.__ydl.extract_info(query, download=False)
-                    )
-            except Exception as e:
-                _log.error(e)
-                return None
-
-        if isinstance(video, dict):
-            song = Song(
-                title=video["title"],
-                playback_url=video["url"],
-                uploader=video["channel"],
-                playback_count=self.__format_view_count(video["view_count"]),
-                duration=self.__format_duration(video["duration"]),
-                upload_date=self.__format_upload_date(video["upload_date"]),
-                thumbnail=video["thumbnail"],
-                webpage_url=video["webpage_url"],
-                category=video["categories"][0],
-                album=None,
-                context=ctx,
-            )
-            return song
-
-        return None
+            _log.error(f"No results were found for the query '{query}'")
+            return None
