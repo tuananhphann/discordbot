@@ -1,20 +1,28 @@
-from typing import Deque
+from typing import List
 
 import discord
-
-from cogs.music.playlist import PlayList
 from cogs.music.song import Song
+from discord.ext import commands
 
 
 class Embed:
     """Discord embed templates"""
 
-    def __init__(self, ctx):
+    def __init__(self, ctx: commands.Context | None = None):
         self.ctx = ctx
         self.embed = discord.Embed()
 
     def help(self):
         pass
+
+    def normal(self, title=None, color=None, description=None):
+        self.embed.title = title
+        self.embed.color = color
+        self.embed.description = description
+        return self.embed
+
+    def leave_channel_message(self, minutes: int = 10):
+        return self.normal(color=discord.Colour.red(), description=f"Leave the voice channel after {minutes} minutes of inactivity.")
 
     def now_playing_song(self, song: Song):
         """Now playing template"""
@@ -27,16 +35,19 @@ class Embed:
         Duration: {song.duration}
         Upload date: {song.upload_date}
         """
+        if song.album is not None:
+            self.embed.description += f'Album: {song.album.title}'
+
         self.embed.set_thumbnail(url=song.thumbnail)
         self.embed.set_footer(
             text=f"Requested by {self.ctx.author.name}",
-            icon_url=self.ctx.author.avatar.url,
+            icon_url=self.ctx.author.avatar.url if self.ctx.author.avatar else None,
         )
         return self.embed
 
-    def in_playlist(self, playlist: Deque[Song]):
+    def in_playlist(self, playlist: List[Song]):
         """playlist template"""
-        self.embed.title = "In playlist"
+        self.embed.title = "In the playlist (10 songs next)"
         self.embed.color = discord.Color.green()
         self.embed.description = ""
         for song in playlist:
@@ -45,12 +56,12 @@ class Embed:
             )
         self.embed.set_footer(
             text=f"Requested by {self.ctx.author.name}",
-            icon_url=self.ctx.author.avatar.url,
+            icon_url=self.ctx.author.avatar.url if self.ctx.author.avatar else None,
         )
         return self.embed
 
     def add_song(self, song, position: int, timewait: str):
-        self.embed.title = "Added song"
+        self.embed.title = "Song added"
         self.embed.color = discord.Color.orange()
         self.embed.description = f"""
         Song: [{song.title}]({song.webpage_url})
@@ -59,13 +70,19 @@ class Embed:
         """
         self.embed.set_footer(
             text=f"Requested by {self.ctx.author.name}",
-            icon_url=self.ctx.author.avatar.url,
+            icon_url=self.ctx.author.avatar.url if self.ctx.author.avatar else None,
         )
         return self.embed
 
-    def error(self, description: str):
-        self.embed.title = "Error"
+    def error(self, description: str, title: str | None = None):
+        self.embed.title = title
         self.embed.color = discord.Color.red()
+        self.embed.description = description
+        return self.embed
+
+    def ok(self, description: str, title: str | None = None):
+        self.embed.title = title
+        self.embed.color = discord.Color.green()
         self.embed.description = description
         return self.embed
 
@@ -90,4 +107,10 @@ class Embed:
         """
         self.embed.color = 0xFFA500
         self.embed.set_footer(text="Reddit", icon_url="https://i.imgur.com/sdO8tAw.png")
+        return self.embed
+
+    def end_playlist(self):
+        self.embed.title = "End playlist"
+        self.embed.description = "There is no song in the playlist!"
+        self.embed.color = discord.Color.green()
         return self.embed
