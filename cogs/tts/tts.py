@@ -1,13 +1,12 @@
 import asyncio
 import logging
 
+import constants
 import discord
 import gtts
+from cogs.components.discord_embed import Embed
 from discord.ext import commands
 from gtts import gTTS
-
-import constants
-from cogs.components.discord_embed import Embed
 
 langs = gtts.tts.tts_langs()
 
@@ -15,7 +14,7 @@ _log = logging.getLogger(__name__)
 
 
 class TTS(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.path = constants.TEMP_FOLDER
         self.file_name = r"\voice.mp3"
