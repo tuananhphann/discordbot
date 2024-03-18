@@ -13,6 +13,8 @@ music_example.py
 test*
 *.log
 *.json
+.idea/
+table.py
 
 # C extensions
 *.so
