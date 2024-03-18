@@ -1,14 +1,14 @@
 import asyncio
 import logging
+import traceback
 
 import discord
-from discord.ext import commands
-
-from cogs.game_free.game_free import GameFree
+from cogs.admin.admin import Admin
 from cogs.greetings import Greeting
 from cogs.music.music import Music
 from cogs.tts.tts import TTS
-from utils import cleanup, get_env, setup_logger
+from discord.ext import commands
+from utils.utils import cleanup, get_env, setup_logger
 
 logging.getLogger(name=__name__)
 
@@ -23,10 +23,10 @@ class Bot(commands.Bot):
     #     await self.tree.sync()
     #     print(f"Synced slash command for {self.user}")
 
-    # async def on_command_error(self, ctx: commands.Context, error) -> None:
-    #     # await ctx.reply(error, ephemeral = True)
-    #     _log.error(error)
-    #     pass
+    async def on_command_error(self, ctx: commands.Context, error) -> None:
+        await ctx.reply("There was an error 🥲", ephemeral=True)
+        # _log.error(error)
+        pass
 
 
 bot = Bot()
@@ -40,9 +40,11 @@ async def on_ready() -> None:
 
 
 async def main() -> None:
-    setup_logger(name="discord")
-    setup_logger(name="cogs", level=10)
-    setup_logger(name="DiscordBot")
+    setup_logger(name="discord", level=logging.INFO)
+    setup_logger(name="cogs")
+    setup_logger(name="discordbot")
+    setup_logger(name="pytube", level=logging.INFO)
+
     async with bot:
         token = get_env(key="TOKEN")
         if token is None:
@@ -50,18 +52,20 @@ async def main() -> None:
         await bot.add_cog(Music(bot))
         await bot.add_cog(Greeting(bot))
         await bot.add_cog(TTS(bot))
-        await bot.add_cog(GameFree(bot))
+        await bot.add_cog(Admin(bot))
         await bot.start(token=token)
 
 
-try:
-    asyncio.run(main=main())
-except KeyboardInterrupt:
-    print("Bot ended by host.")
-except Exception as ex:
-    print(
-        f"""Bot ended because under reasons:
-          {ex}"""
-    )
-finally:
-    cleanup()
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        for vc in bot.voice_clients:
+            vc.disconnect()
+        print("Bot terminated by host.")
+    except Exception:
+        print(
+            f"Bot terminated because of the following error:\n{traceback.format_exc()}"
+        )
+    finally:
+        cleanup()
