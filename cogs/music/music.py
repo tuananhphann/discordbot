@@ -37,7 +37,7 @@ class Music(commands.Cog):
     )
     @ensure_voice
     async def p(self, interaction: discord.Interaction, query: str):
-        await interaction.response.defer()
+        await interaction.response.defer(thinking=True)
         ctx = await self.bot.get_context(interaction)
 
         if ctx.voice_client.channel != ctx.author.voice.channel:

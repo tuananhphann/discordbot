@@ -10,7 +10,7 @@ from cogs.tts.tts import TTS
 from discord.ext import commands
 from utils.utils import cleanup, get_env, setup_logger
 
-logging.getLogger(name=__name__)
+_log = logging.getLogger(name=__name__)
 
 
 class Bot(commands.Bot):
@@ -25,7 +25,7 @@ class Bot(commands.Bot):
 
     async def on_command_error(self, ctx: commands.Context, error) -> None:
         await ctx.reply("There was an error 🥲", ephemeral=True)
-        # _log.error(error)
+        _log.error(error)
         pass
 
 

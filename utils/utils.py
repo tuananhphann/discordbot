@@ -5,7 +5,8 @@ import os
 import time
 from datetime import datetime, timedelta
 from logging import Logger
-from typing import Union
+from typing import Union, Callable
+import functools
 
 import constants
 from dotenv import find_dotenv, load_dotenv
@@ -33,6 +34,14 @@ def timing_async(func):
         end_time = time.time()
         print(f"{func.__name__} took {end_time - start_time:.4f} seconds.")
         return result
+
+    return wrapper
+
+
+def to_thread(func):
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        return await asyncio.to_thread(func, *args, **kwargs)
 
     return wrapper
 

@@ -119,44 +119,29 @@ class Audio:
         start = time.time()
         songs = await Search().query(query, ctx, priority)
 
-        if songs is not None:
-            if priority:
-                await asyncio.gather(*(self.playlist.add_next(song) for song in songs))
-            else:
-                await asyncio.gather(*(self.playlist.add(song) for song in songs))
+        if songs:
+            add_songs = self.playlist.add_next if priority else self.playlist.add
+            await asyncio.gather(*(add_songs(song) for song in songs))
             end = time.time()
             _log.info(
-                f"Added {len(songs) if songs is not None else 0} song(s) to current playlist in {round(end-start,2)} seconds from query '{query}'."
+                f"Added {len(songs)} song(s) to current playlist in {round(end-start,2)} seconds from query '{query}'."
             )
 
             latest_song = songs[0]
             if self.playlist.size() > 0 and self.playlist.index(latest_song) is not None:
-                if priority:
-                    current_time = convert_to_second(get_time())
-                    time_wait = self.current_song_duration - (current_time - self.start_time)
-
-                    embed = Embed(ctx).add_song(
-                        latest_song,
-                        self.playlist.index(latest_song) + 1,
-                        f"Next, about {convert_to_time(time_wait)}",
-                    )
-                    await ctx.send(embed=embed)
-                else:
-                    current_time = convert_to_second(get_time())
-                    time_wait = (
-                        self.current_song_duration
-                        - (current_time - self.start_time)
-                        + convert_to_second(
-                            self.playlist.time_wait(self.playlist.index(latest_song))
-                        )
+                current_time = convert_to_second(get_time())
+                time_wait = self.current_song_duration - (current_time - self.start_time)
+                if not priority:
+                    time_wait += convert_to_second(
+                        self.playlist.time_wait(self.playlist.index(latest_song))
                     )
 
-                    embed = Embed(ctx).add_song(
-                        latest_song,
-                        position=self.playlist.index(latest_song) + 1,
-                        timewait=convert_to_time(time_wait),
-                    )
-                    await ctx.send(embed=embed)
+                embed = Embed(ctx).add_song(
+                    latest_song,
+                    position=self.playlist.index(latest_song) + 1,
+                    timewait=convert_to_time(time_wait),
+                )
+                await ctx.send(embed=embed)
 
         else:
             await ctx.send(embed=Embed().error("No songs were found!"))

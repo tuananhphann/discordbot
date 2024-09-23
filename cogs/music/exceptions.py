@@ -16,3 +16,8 @@ class MusicError(Exception):
 class ResolveException(Exception):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
+
+
+class ExtractException(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)

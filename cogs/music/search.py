@@ -26,10 +26,7 @@ class Search:
         parsed_url = urllib.parse.urlparse(url)
         netloc = parsed_url.netloc
         domain = netloc.split(".")[0]
-        if domain.lower() == "soundcloud":
-            return True
-        else:
-            return False
+        return domain.lower() == "soundcloud"
 
     async def query(
         self, query: str, ctx: commands.Context, priority: bool = False
@@ -44,14 +41,10 @@ class Search:
                     query=query, ctx=ctx
                 )
             else:
-                if "/playlist?" in query or "&list=" in query:
-                    songs = await extractors.get_extractor("youtube").get_data(
-                        query=query, ctx=ctx, is_playlist=True
-                    )
-                else:
-                    songs = await extractors.get_extractor("youtube").get_data(
-                        query=query, ctx=ctx
-                    )
+                is_playlist = "/playlist?" in query or "&list=" in query
+                songs = await extractors.get_extractor("youtube").get_data(
+                    query=query, ctx=ctx, is_playlist=is_playlist
+                )
         else:
             songs = await extractors.get_extractor("soundcloud").get_data(
                 query=query, ctx=ctx, is_search=True
@@ -64,7 +57,7 @@ class Search:
         if songs:
             if priority:
                 songs.reverse()
-            return songs
+            return [song for song in songs if song is not None]
         else:
             _log.error(f"No results were found for the query '{query}'")
             return None
