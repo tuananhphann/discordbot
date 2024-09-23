@@ -5,10 +5,10 @@ from abc import ABC, abstractmethod
 from typing import List
 
 import constants
-import yt_dlp as youtube_dl
 from cogs.music.album import Album
 from cogs.music.song import Song
-from cogs.music.soundcloud import SoundCloud
+from cogs.music.services.soundcloud_service import SoundCloudService
+from soundcloud.resource.track import Track
 from pytube import Playlist, Search, YouTube
 from pytube.exceptions import VideoUnavailable
 from utils.http_request import HttpRequest
@@ -20,7 +20,6 @@ class Extractor(ABC):
     def __init__(self) -> None:
         self.requester = HttpRequest()
         self.loop = asyncio.get_event_loop()
-        self._ydl = youtube_dl.YoutubeDL(constants.YDL_OPTS)
 
     @abstractmethod
     async def get_data(self, query, ctx, is_search=False, is_playlist=False) -> List[Song] | None:
@@ -104,7 +103,7 @@ class YoutubeExtractor(Extractor):
 class SoundCloudExtractor(Extractor):
     def __init__(self) -> None:
         super().__init__()
-        self.soundcloud = SoundCloud()
+        self.soundcloud = SoundCloudService()
 
     def format_duration(self, duration) -> str:
         duration_fmt = datetime.timedelta(milliseconds=float(duration))
@@ -120,7 +119,7 @@ class SoundCloudExtractor(Extractor):
             "%d/%m/%Y"
         )
 
-    async def create_song(self, track, ctx, playlist_name) -> Song:
+    def create_song(self, track, ctx, playlist_name) -> Song:
         return Song(
             title=track["title"],
             playback_url=(self.soundcloud.get_playback_url, track),
@@ -137,14 +136,16 @@ class SoundCloudExtractor(Extractor):
     async def get_data(self, query, ctx, is_search=False) -> List[Song] | None:
         if is_search:
             data = self.soundcloud.search(query)
-            tracks = data["tracks"][0]
-            song = await self.create_song(tracks, ctx, None)
+            tracks = next(data)
+            while not isinstance(next(data), Track):
+                tracks = next(data)
+            song = self.create_song(tracks, ctx, None)
             return [song]
 
-        data = await self.soundcloud.extract_song(query)
+        data = self.soundcloud.extract_song_from_url(query)
         playlist_name = data["playlist_name"]
         tracks = data["tracks"]
-        songs = await asyncio.gather(*[self.create_song(track, ctx, playlist_name) for track in tracks])
+        songs = [self.create_song(track, ctx, playlist_name) for track in tracks]
         return songs
 
 

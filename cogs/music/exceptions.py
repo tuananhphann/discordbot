@@ -11,3 +11,8 @@ class MusicError(Exception):
     def __init__(self, message: str) -> None:
         self.message: str = message
         super().__init__(message)
+
+
+class ResolveException(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
