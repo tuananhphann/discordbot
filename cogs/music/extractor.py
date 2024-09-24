@@ -14,6 +14,7 @@ from pytube import Playlist, Search, YouTube
 from pytube.exceptions import VideoUnavailable
 from utils.http_request import HttpRequest
 from cogs.music.exceptions import ExtractException
+from utils.utils import to_thread
 
 _log = logging.getLogger(__name__)
 
@@ -128,7 +129,8 @@ class SoundCloudExtractor(Extractor):
             "%d/%m/%Y"
         )
 
-    async def create_song(self, track: BaseTrack, ctx, playlist_name) -> Song:
+    @to_thread
+    def create_song(self, track: BaseTrack, ctx, playlist_name) -> Song:
         if isinstance(track, MiniTrack):
             track = self.soundcloud.sc.get_track(track.id)
             if track is None:
@@ -137,12 +139,9 @@ class SoundCloudExtractor(Extractor):
         def safe_getattr(obj, attr, default):
             return getattr(obj, attr, default) if obj else default
 
-        def safe_format_date(date) -> str:
+        def safe_format_date(date: datetime.datetime) -> str:
             try:
-                date_str = date.strftime("%Y-%m-%dT%H:%M:%SZ")
-                return datetime.datetime.strptime(
-                    date_str, "%Y-%m-%dT%H:%M:%SZ"
-                ).strftime("%d/%m/%Y")
+                return date.strftime("%d/%m/%Y")
             except (ValueError, TypeError):
                 return "Unknown Date"
 

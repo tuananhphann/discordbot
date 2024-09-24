@@ -40,6 +40,7 @@ async def on_ready() -> None:
 
 
 async def main() -> None:
+    setup_logger(name="soundcloud")
     setup_logger(name="discord", level=logging.INFO)
     setup_logger(name="cogs")
     setup_logger(name="discordbot")

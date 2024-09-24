@@ -3,8 +3,11 @@ from soundcloud.resource.base import BaseData
 import requests
 from dataclasses import dataclass
 from cogs.music.exceptions import ResolveException
-from typing import Any
+from patterns.singleton import SingletonMeta
 from utils.utils import to_thread
+import logging
+
+_log = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -14,15 +17,17 @@ class TrackPlayable(BaseData):
     url: str
 
 
-class SoundCloudService:
+class SoundCloudService(metaclass=SingletonMeta):
     def __init__(self) -> None:
         self.sc = SoundCloud()
         self.client_id = self.sc.client_id
 
     def search(self, query: str):
+        _log.info(f"Searching for: '{query}'")
         return self.sc.search(query)
 
     def resolve_url(self, url: str):
+        _log.info(f"Resolving URL: '{url}'")
         return self.sc.resolve(url)
 
     def get_thumbnail(self, track: Track) -> str:
@@ -41,17 +46,20 @@ class SoundCloudService:
         response = requests.get(
             stream_url, headers=self.sc._get_default_headers(), params=params
         )
+        _log.info(f"Got playback URL for: '{track.title}'")
         return TrackPlayable.from_dict(response.json()).url
 
     async def extract_song_from_url(self, url: str):
         resolve = self.resolve_url(url)
         if resolve is None or not isinstance(resolve, (AlbumPlaylist, Track)):
             if resolve is None:
-                raise ResolveException(f"Cannot resolve the URL: {url}.")
+                error = f"Cannot resolve the URL: '{url}'."
+                _log.error(error)
+                raise ResolveException(error)
             else:
-                raise ResolveException(
-                    f"Cannot resolve the URL: {url}. Because it's not a track or playlist."
-                )
+                error = f"Resolve type is {type(resolve)}. Expected type is Track or AlbumPlaylist."
+                _log.error(error)
+                raise ResolveException(error)
 
         if isinstance(resolve, AlbumPlaylist):
             return {

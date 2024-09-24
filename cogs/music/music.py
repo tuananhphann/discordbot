@@ -82,6 +82,7 @@ class Music(commands.Cog):
         description="Show the current playlist."
     )
     async def queue(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         ctx = await self.bot.get_context(interaction)
         if interaction.guild_id and ctx.voice_client:
             if self.playerManager.players[interaction.guild_id].playlist.size() == 0:
@@ -102,6 +103,7 @@ class Music(commands.Cog):
         description="This song is so terrible? Just use this command to skip.",
     )
     async def skip(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         ctx = await self.bot.get_context(interaction)
         if ctx.voice_client and ctx.voice_client.is_playing():
             ctx.voice_client.stop()
@@ -114,6 +116,7 @@ class Music(commands.Cog):
         description="Clear the playlist, stop playing music, and leave the channel.",
     )
     async def stop(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         ctx = await self.bot.get_context(interaction)
         if ctx.voice_client and interaction.guild_id:
             self.playerManager.players[interaction.guild_id].timer.cancel()
@@ -129,6 +132,7 @@ class Music(commands.Cog):
     )
     @ensure_voice
     async def come(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         ctx = await self.bot.get_context(interaction)
         if ctx.author.voice.channel != ctx.voice_client.channel:
             ctx.voice_client.pause()
