@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from cogs.music.controller import PlayerManager
 
 
 class Admin(commands.Cog):
@@ -9,7 +10,11 @@ class Admin(commands.Cog):
 
     @app_commands.command(name="shutdown", description="Shutdown the bot.")
     @commands.is_owner()
-    async def shutdown(self, interaction: discord.Interaction):
+    async def shutdown(self, interaction: discord.Interaction) -> None:
+        for player in PlayerManager().players.values():
+            player.destroy()
+            del player
+
         ctx = await self.bot.get_context(interaction)
         if ctx.voice_client:
             await ctx.voice_client.disconnect()
