@@ -1,20 +1,15 @@
-from soundcloud import AlbumPlaylist, SoundCloud, Track
-from soundcloud.resource.base import BaseData
+import asyncio
+import logging
+from typing import List, Union
+
 import requests
-from dataclasses import dataclass
+from soundcloud import AlbumPlaylist, BasicTrack, SoundCloud, Track
+
 from cogs.music.exceptions import ResolveException
 from patterns.singleton import SingletonMeta
 from utils.utils import to_thread
-import logging
 
 _log = logging.getLogger(__name__)
-
-
-@dataclass(slots=True)
-class TrackPlayable(BaseData):
-    """Provide a playback URL of a Track"""
-
-    url: str
 
 
 class SoundCloudService(metaclass=SingletonMeta):
@@ -23,18 +18,18 @@ class SoundCloudService(metaclass=SingletonMeta):
         self.client_id = self.sc.client_id
 
     def search(self, query: str):
-        _log.info(f"Searching for: '{query}'")
+        _log.debug(f"Searching for: '{query}'")
         return self.sc.search(query)
 
     def resolve_url(self, url: str):
-        _log.info(f"Resolving URL: '{url}'")
-        return self.sc.resolve(url)
+        r = self.sc.resolve(url)
+        _log.debug(f"Resolved URL: '{url}'. Type: {type(r)}")
+        return r
 
-    def get_thumbnail(self, track: Track) -> str:
+    def get_thumbnail(self, track: Union[Track, BasicTrack]) -> str:
         return track.artwork_url or track.user.avatar_url
 
-    @to_thread
-    def get_playback_url(self, track: Track):
+    def get_playback_url(self, track: Union[Track, BasicTrack]):
         # Transcoding involves 3 types of protocols: HLS, progressive and Opus.
         # We prefer to use the 'HLS' protocol because it's the best for streaming.
         stream_url = track.media.transcodings[0].url
@@ -46,8 +41,27 @@ class SoundCloudService(metaclass=SingletonMeta):
         response = requests.get(
             stream_url, headers=self.sc._get_default_headers(), params=params
         )
-        _log.info(f"Got playback URL for: '{track.title}'")
-        return TrackPlayable.from_dict(response.json()).url
+        response.raise_for_status()
+        _log.debug(f"Got playback URL for: '{track.title}'")
+        return response.json()["url"]
+
+    @to_thread
+    def __get_tracks(self, track_ids: list[int]) -> List[BasicTrack]:
+        """Get tracks from track IDs. Maximum 50 tracks per request."""
+        return self.sc.get_tracks(track_ids)
+
+    async def get_tracks_info(self, track_ids: list[int], **kwargs) -> List[BasicTrack]:
+        """Get tracks from track IDs. Recommended to use this method for getting tracks."""
+        MAX_TRACKS_PER_REQUEST = 50
+        chunks = [
+            track_ids[i : i + MAX_TRACKS_PER_REQUEST]
+            for i in range(0, len(track_ids), MAX_TRACKS_PER_REQUEST)
+        ]
+        tracks = []
+        r = await asyncio.gather(*[self.__get_tracks(chunk) for chunk in chunks])
+        for res in r:
+            tracks.extend(res)
+        return tracks
 
     async def extract_song_from_url(self, url: str):
         resolve = self.resolve_url(url)
