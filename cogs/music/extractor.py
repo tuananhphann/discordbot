@@ -1,20 +1,19 @@
 import asyncio
-import datetime
 import logging
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Literal, Union
 
-from soundcloud import MiniTrack
-
-from cogs.music.album import Album
-from cogs.music.song import Song
-from cogs.music.services.soundcloud_service import SoundCloudService
-from soundcloud.resource.track import Track, BaseTrack
+from discord.ext import commands
 from pytube import Playlist, Search, YouTube
 from pytube.exceptions import VideoUnavailable
-from utils.http_request import HttpRequest
+from soundcloud import BasicTrack, MiniTrack
+from soundcloud.resource.track import Track
+
 from cogs.music.exceptions import ExtractException
-from utils.utils import to_thread
+from cogs.music.services.soundcloud_service import SoundCloudService
+from cogs.music.song import (SongMeta, SoundCloudSongMeta, YouTubeSongMeta,
+                             format_duration)
+from utils.http_request import HttpRequest
 
 _log = logging.getLogger(__name__)
 
@@ -25,52 +24,48 @@ class Extractor(ABC):
         self.loop = asyncio.get_event_loop()
 
     @abstractmethod
+    async def create_song_metadata(self, data, ctx, playlist_name) -> SongMeta:
+        pass
+
+    @abstractmethod
     async def get_data(
         self, query, ctx, is_search=False, is_playlist=False
-    ) -> List[Song] | None:
+    ) -> List[SongMeta] | None:
         pass
 
 
 class YoutubeExtractor(Extractor):
-    def format_duration(self, duration: int) -> str:
-        duration_fmt = datetime.timedelta(seconds=float(duration))
-        return str(duration_fmt)
+    def __init__(self) -> None:
+        super().__init__()
 
-    def format_view_count(self, view_count: int) -> str:
-        return "{:,}".format(view_count)
-
-    def format_upload_date(self, upload_date: datetime.datetime) -> str:
-        return upload_date.strftime("%d/%m/%Y")
-
-    def get_playback_url(self, yt: YouTube) -> str:
-        return yt.streams.get_audio_only().url
+    async def create_song_metadata(
+        self, yt: YouTube, ctx: commands.Context, playlist_name: str | None
+    ) -> YouTubeSongMeta:
+        return YouTubeSongMeta(
+            title=yt.title,
+            duration=format_duration(yt.length),
+            video_id=yt.video_id,
+            ctx=ctx,
+            playlist_name=playlist_name,
+            webpage_url=yt.watch_url,
+        )
 
     async def get_data(
         self, query: str, ctx, is_search=False, is_playlist=False
-    ) -> List[Song] | None:
+    ) -> List[YouTubeSongMeta] | None:
         if is_search:
             results = Search(query).results
             if results:
                 result = results[0]
-                song = Song(
-                    title=result.title,
-                    playback_url=(self.get_playback_url, result),
-                    uploader=result.author,
-                    playback_count=self.format_view_count(result.views),
-                    duration=self.format_duration(result.length),
-                    upload_date=self.format_upload_date(result.publish_date),
-                    thumbnail=result.thumbnail_url,
-                    webpage_url=result.watch_url,
-                    album=None,
-                    context=ctx,
-                )
+                song = await self.create_song_metadata(result, ctx, None)
                 return [song]
             return None
-        elif is_playlist:
+
+        if is_playlist:
             playlist = Playlist(query)
             songs = await asyncio.gather(
                 *[
-                    self.create_song(video, ctx, playlist.title)
+                    self.create_song_metadata(video, ctx, playlist.title)
                     for video in playlist.videos
                 ]
             )
@@ -81,33 +76,8 @@ class YoutubeExtractor(Extractor):
             except VideoUnavailable:
                 return None
 
-            song = Song(
-                title=yt.title,
-                playback_url=self.get_playback_url(yt),
-                uploader=yt.author,
-                playback_count=self.format_view_count(yt.views),
-                duration=self.format_duration(yt.length),
-                upload_date=self.format_upload_date(yt.publish_date),
-                thumbnail=yt.thumbnail_url,
-                webpage_url=yt.watch_url,
-                album=None,
-                context=ctx,
-            )
+            song = await self.create_song_metadata(yt, ctx, None)
             return [song]
-
-    async def create_song(self, video, ctx, playlist_title):
-        return Song(
-            title=video.title,
-            playback_url=(self.get_playback_url, video),
-            uploader=video.author,
-            playback_count=self.format_view_count(video.views),
-            duration=self.format_duration(video.length),
-            upload_date=self.format_upload_date(video.publish_date),
-            thumbnail=video.thumbnail_url,
-            webpage_url=video.watch_url,
-            album=Album(playlist_title),
-            context=ctx,
-        )
 
 
 class SoundCloudExtractor(Extractor):
@@ -115,60 +85,36 @@ class SoundCloudExtractor(Extractor):
         super().__init__()
         self.soundcloud = SoundCloudService()
 
-    def format_duration(self, duration) -> str:
-        duration_fmt = datetime.timedelta(milliseconds=float(duration))
-        return str(
-            duration_fmt - datetime.timedelta(microseconds=duration_fmt.microseconds)
-        )
-
-    def format_playback_count(self, playback_count) -> str:
-        return f"{int(playback_count):,}"
-
-    def format_upload_date(self, date) -> str:
-        return datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").strftime(
-            "%d/%m/%Y"
-        )
-
-    @to_thread
-    def create_song(self, track: BaseTrack, ctx, playlist_name) -> Song:
-        if isinstance(track, MiniTrack):
-            track = self.soundcloud.sc.get_track(track.id)
-            if track is None:
-                return None
-
-        def safe_getattr(obj, attr, default):
-            return getattr(obj, attr, default) if obj else default
-
-        def safe_format_date(date: datetime.datetime) -> str:
-            try:
-                return date.strftime("%d/%m/%Y")
-            except (ValueError, TypeError):
-                return "Unknown Date"
-
-        return Song(
-            title=safe_getattr(track, "title", "Unknown Title"),
-            playback_url=(self.soundcloud.get_playback_url, track),
-            uploader=safe_getattr(
-                safe_getattr(track, "user", None), "username", "Unknown Uploader"
+    async def create_song_metadata(
+        self,
+        track: Union[Track, BasicTrack, MiniTrack],
+        ctx: commands.Context,
+        playlist_name: str | None,
+    ) -> SoundCloudSongMeta:
+        return SoundCloudSongMeta(
+            title=track.title if not isinstance(track, MiniTrack) else None,
+            duration=(
+                format_duration(track.duration, unit="milliseconds")
+                if not isinstance(track, MiniTrack)
+                else "0"
             ),
-            duration=self.format_duration(safe_getattr(track, "duration", 0)),
-            playback_count=self.format_playback_count(
-                safe_getattr(track, "playback_count", 0)
+            track_id=track.id,
+            ctx=ctx,
+            playlist_name=playlist_name,
+            webpage_url=(
+                track.permalink_url if not isinstance(track, MiniTrack) else None
             ),
-            upload_date=safe_format_date(safe_getattr(track, "created_at", None)),
-            thumbnail=self.soundcloud.get_thumbnail(track),
-            webpage_url=safe_getattr(track, "permalink_url", "Unknown URL"),
-            album=Album(playlist_name) if playlist_name else None,
-            context=ctx,
         )
 
-    async def get_data(self, query, ctx, is_search=False) -> List[Song] | None:
+    async def get_data(
+        self, query, ctx, is_search=False
+    ) -> List[SoundCloudSongMeta] | None:
         if is_search:
             data = self.soundcloud.search(query)
-            tracks = next(data)
-            while not isinstance(next(data), Track):
-                tracks = next(data)
-            song = await self.create_song(tracks, ctx, None)
+            track = next(data)
+            while not isinstance(next(data), (Track, BasicTrack)):
+                track = next(data)
+            song = await self.create_song_metadata(track, ctx, None)  # type: ignore
             return [song]
 
         data = await self.soundcloud.extract_song_from_url(query)
@@ -179,16 +125,18 @@ class SoundCloudExtractor(Extractor):
         playlist_name = data["playlist_name"]
         tracks = data["tracks"]
         songs = await asyncio.gather(
-            *[self.create_song(track, ctx, playlist_name) for track in tracks]
+            *[self.create_song_metadata(track, ctx, playlist_name) for track in tracks]
         )
+        _log.info(f"Extracted {len(songs)} song(s) from SoundCloud URL.")
         return songs
 
 
 class ExtractorFactory:
     extractors = {"youtube": YoutubeExtractor, "soundcloud": SoundCloudExtractor}
 
-    def get_extractor(self, extractor: str) -> Extractor:
-        if extractor in self.extractors:
-            return self.extractors[extractor]()
+    @classmethod
+    def get_extractor(cls, extractor: Literal["youtube", "soundcloud"]) -> Extractor:
+        if extractor in cls.extractors:
+            return cls.extractors[extractor]()
         else:
             raise ExtractException(f"Cannot find extractor with name '{extractor}'")
