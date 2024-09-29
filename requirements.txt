@@ -11,3 +11,4 @@ discord~=2.3.2
 requests~=2.31.0
 bs4~=0.0.2
 urllib3~=2.2.1
+soundcloud-v2
