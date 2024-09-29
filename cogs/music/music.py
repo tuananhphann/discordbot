@@ -92,7 +92,7 @@ class Music(commands.Cog):
                     )
                 )
             else:
-                playlist = self.playerManager.players[interaction.guild_id].playlist.get_list(10)
+                playlist = await self.playerManager.players[interaction.guild_id].playlist.get_list(10)
                 embed = Embed(ctx).in_playlist(playlist)
                 await ctx.send(embed=embed)
         else:
@@ -119,7 +119,7 @@ class Music(commands.Cog):
         await interaction.response.defer()
         ctx = await self.bot.get_context(interaction)
         if ctx.voice_client and interaction.guild_id:
-            self.playerManager.players[interaction.guild_id].timer.cancel()
+            self.playerManager.players[interaction.guild_id].destroy()
             del self.playerManager.players[interaction.guild_id]
             await ctx.send(embed=Embed().ok("Thanks for using the bot ^^"))
             await ctx.voice_client.disconnect()

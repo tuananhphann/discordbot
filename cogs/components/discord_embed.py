@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Union
 
 import discord
-from cogs.music.song import Song
 from discord.ext import commands
+
+from cogs.music.song import Song, SongMeta
 
 
 class Embed:
@@ -22,7 +23,10 @@ class Embed:
         return self.embed
 
     def leave_channel_message(self, minutes: int = 10):
-        return self.normal(color=discord.Colour.red(), description=f"Leave the voice channel after {minutes} minutes of inactivity.")
+        return self.normal(
+            color=discord.Colour.red(),
+            description=f"Leave the voice channel after {minutes} minutes of inactivity.",
+        )
 
     def now_playing_song(self, song: Song):
         """Now playing template"""
@@ -36,7 +40,7 @@ class Embed:
         Upload date: {song.upload_date}
         """
         if song.album is not None:
-            self.embed.description += f'Album: {song.album.title}'
+            self.embed.description += f"Album: {song.album.title}"
 
         self.embed.set_thumbnail(url=song.thumbnail)
         self.embed.set_footer(
@@ -45,7 +49,7 @@ class Embed:
         )
         return self.embed
 
-    def in_playlist(self, playlist: List[Song]):
+    def in_playlist(self, playlist: List[Union[Song, SongMeta]]):
         """playlist template"""
         self.embed.title = "In the playlist (10 songs next)"
         self.embed.color = discord.Color.green()
