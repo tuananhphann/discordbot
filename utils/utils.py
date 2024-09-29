@@ -1,74 +1,89 @@
 import asyncio
+import functools
 import logging
 import logging.handlers
 import os
-import time
 from datetime import datetime, timedelta
 from logging import Logger
-from typing import Union, Callable
-import functools
+from typing import Callable, Coroutine, Literal, Union
 
-import constants
 from dotenv import find_dotenv, load_dotenv
 
-
-def timing_sync(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        print(f"{func.__name__} took {end_time - start_time:.4f} seconds.")
-        return result
-
-    return wrapper
+import constants
 
 
-def timing_async(func):
-    """
-    Decorator to measure the execution time of a function (both sync and async).
-    """
-
-    async def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = await func(*args, **kwargs)
-        end_time = time.time()
-        print(f"{func.__name__} took {end_time - start_time:.4f} seconds.")
-        return result
-
-    return wrapper
-
-
-def to_thread(func):
+def to_thread(func: Callable) -> Coroutine:
     @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         return await asyncio.to_thread(func, *args, **kwargs)
 
-    return wrapper
+    return wrapper  # type: ignore
 
 
 def convert_to_second(time: str) -> float:
+    """Converts a time string with '%H:%M:%S' format to seconds."""
     parsed_datetime: datetime = datetime.strptime(time, "%H:%M:%S")
     dt: timedelta = parsed_datetime - datetime(1900, 1, 1)
     return dt.total_seconds()
 
 
 def convert_to_time(seconds: float) -> str:
+    """Converts seconds to a time string with '%H:%M:%S' format."""
     return str(timedelta(seconds=seconds))
 
 
 def get_time():
+    """Get the current time in '%H:%M:%S' format."""
     dt = datetime.now().time()
     timestr = f"{dt.hour}:{dt.minute}:{dt.second}"
     return timestr
 
 
+def safe_getattr(obj, attr, default):
+    """Safely get an attribute from an object."""
+    return getattr(obj, attr, default) if obj else default
+
+
+def safe_format_date(date: datetime | None) -> str:
+    """Safely format a date object to a string."""
+    try:
+        return date.strftime("%d/%m/%Y")  # type: ignore
+    except (ValueError, TypeError):
+        return "Unknown Date"
+
+
+def format_playback_count(playback_count: int) -> str:
+    """Format the playback count to a string."""
+    return "{:,}".format(playback_count)
+
+
+def format_duration(
+    duration: float, unit: Literal["seconds", "milliseconds"] = "seconds"
+) -> str:
+    """Format the duration to a string.
+    Args:
+        duration (float): The duration in seconds.
+        unit (str): The unit to format the duration to. Default is 'seconds'.
+        Returns:
+        str: The formatted duration.
+    """
+    if unit == "milliseconds":
+        duration_fmt = timedelta(milliseconds=duration)
+        duration_fmt -= timedelta(microseconds=duration_fmt.microseconds)
+    else:  # default to seconds
+        duration_fmt = timedelta(seconds=duration)
+    return str(duration_fmt)
+
+
 def get_env(key: str) -> Union[str, None]:
+    """Get the environment variable by the key."""
     load_dotenv(dotenv_path=find_dotenv())
     TOKEN: str | None = os.environ.get(key)
     return TOKEN
 
 
 def setup_logger(name: str, level=logging.DEBUG) -> None:
+    """Setup a logger for the bot."""
     logger: Logger = logging.getLogger(name)
     logger.setLevel(level)
     handler = logging.handlers.RotatingFileHandler(
