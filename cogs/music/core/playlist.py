@@ -1,20 +1,22 @@
 import asyncio
 import logging
 from collections import deque
-from typing import Deque, List
+from typing import Deque, List, Optional, TYPE_CHECKING
 
-from cogs.music.song import Song, SongMeta, SoundCloudSongMeta, YouTubeSongMeta, createSong, get_songs_info
-from patterns.observe import Observable
-from utils.utils import convert_to_second, convert_to_time
+from cogs.music.core.song import Song, SongMeta, SoundCloudSongMeta, YouTubeSongMeta, createSong, get_songs_info
+from patterns.observe import Observable, Observer
+from utils import convert_to_second, convert_to_time
+
+if TYPE_CHECKING:
+    from cogs.music.controller import Audio
 
 _logger = logging.getLogger(__name__)
-
 
 class PlayList(Observable):
     def __init__(self) -> None:
         super().__init__()
         self._q: Deque[SongMeta] = deque()
-        self.lock = asyncio.Lock()
+        self.lock: asyncio.Lock = asyncio.Lock()
 
     async def add(self, song: SongMeta) -> None:
         """
@@ -44,7 +46,7 @@ class PlayList(Observable):
             self._q.appendleft(song)
             await self.notify()
 
-    def index(self, song: SongMeta) -> int | None:
+    def index(self, song: SongMeta) -> Optional[int]:
         """
         Get the index of a song in the queue.
 
@@ -85,7 +87,7 @@ class PlayList(Observable):
         """
         self._q.clear()
 
-    async def time_wait(self, to_song_index: int | None = None) -> str:
+    def time_wait(self, to_song_index: int | None = None) -> str:
         """
         Calculate the total duration of songs in the queue up to a specified index.
         Args:
@@ -196,7 +198,7 @@ class PlayList(Observable):
             f"Updated {len([i for i in songs_with_info if i is not None])} song(s) meta info."
         )
 
-    def trigger_update_all_song_meta(self):
+    def trigger_update_all_song_meta(self) -> None:
         """
         Trigger update all song meta info.
 
@@ -209,3 +211,11 @@ class PlayList(Observable):
         """
         _logger.debug("Triggering update all song meta info.")
         asyncio.create_task(self.__update_all_song_meta())
+
+class PlaylistObserver(Observer):
+    def __init__(self, player: 'Audio') -> None:
+        super().__init__()
+        self.player = player
+
+    async def update(self, observable: PlayList) -> None:
+        await self.player.play_next()

@@ -9,18 +9,15 @@ from pytube.exceptions import VideoUnavailable
 from soundcloud import BasicTrack, MiniTrack
 from soundcloud.resource.track import Track
 
-from cogs.music.exceptions import ExtractException
+from core.exceptions import ExtractException
 from cogs.music.services.soundcloud_service import SoundCloudService
-from cogs.music.song import (SongMeta, SoundCloudSongMeta, YouTubeSongMeta,
-                             format_duration)
-from utils.http_request import HttpRequest
+from cogs.music.core.song import (SongMeta, SoundCloudSongMeta, YouTubeSongMeta, format_duration)
 
 _log = logging.getLogger(__name__)
 
 
 class Extractor(ABC):
     def __init__(self) -> None:
-        self.requester = HttpRequest()
         self.loop = asyncio.get_event_loop()
 
     @abstractmethod
@@ -110,7 +107,7 @@ class SoundCloudExtractor(Extractor):
         self, query, ctx, is_search=False
     ) -> List[SoundCloudSongMeta] | None:
         if is_search:
-            data = self.soundcloud.search(query)
+            data = await self.soundcloud.search(query)
             track = next(data)
             while not isinstance(next(data), (Track, BasicTrack)):
                 track = next(data)

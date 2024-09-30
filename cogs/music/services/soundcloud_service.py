@@ -5,9 +5,9 @@ from typing import List, Union
 import requests
 from soundcloud import AlbumPlaylist, BasicTrack, SoundCloud, Track
 
-from cogs.music.exceptions import ResolveException
+from core.exceptions import ResolveException
 from patterns.singleton import SingletonMeta
-from utils.utils import to_thread
+from utils import to_thread
 
 _log = logging.getLogger(__name__)
 
@@ -17,10 +17,12 @@ class SoundCloudService(metaclass=SingletonMeta):
         self.sc = SoundCloud()
         self.client_id = self.sc.client_id
 
+    @to_thread
     def search(self, query: str):
         _log.debug(f"Searching for: '{query}'")
         return self.sc.search(query)
 
+    @to_thread
     def resolve_url(self, url: str):
         r = self.sc.resolve(url)
         _log.debug(f"Resolved URL: '{url}'. Type: {type(r)}")
@@ -29,6 +31,7 @@ class SoundCloudService(metaclass=SingletonMeta):
     def get_thumbnail(self, track: Union[Track, BasicTrack]) -> str:
         return track.artwork_url or track.user.avatar_url
 
+    @to_thread
     def get_playback_url(self, track: Union[Track, BasicTrack]):
         # Transcoding involves 3 types of protocols: HLS, progressive and Opus.
         # We prefer to use the 'HLS' protocol because it's the best for streaming.
@@ -64,7 +67,7 @@ class SoundCloudService(metaclass=SingletonMeta):
         return tracks
 
     async def extract_song_from_url(self, url: str):
-        resolve = self.resolve_url(url)
+        resolve = await self.resolve_url(url)
         if resolve is None or not isinstance(resolve, (AlbumPlaylist, Track)):
             if resolve is None:
                 error = f"Cannot resolve the URL: '{url}'."
