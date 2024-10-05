@@ -1,15 +1,15 @@
 from dataclasses import dataclass
 from functools import singledispatch
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 
 from discord.ext import commands
 from pytube import YouTube
 from pytube.exceptions import VideoUnavailable
 from soundcloud import BasicTrack, Track
 
-from cogs.music.album import Album
+from cogs.music.core.album import Album
 from cogs.music.services.soundcloud_service import SoundCloudService
-from utils.utils import format_duration, format_playback_count, safe_format_date, safe_getattr
+from utils import format_duration, format_playback_count, safe_format_date, safe_getattr
 
 
 @dataclass(slots=True)
@@ -35,14 +35,14 @@ class Song:
     """
 
     title: str
-    playback_url: str | None
+    playback_url: Optional[str]
     uploader: str
     playback_count: str
     duration: str
     upload_date: str
     thumbnail: str
     webpage_url: str
-    album: Album | None
+    album: Optional['Album']
     context: commands.Context
 
     def info(self) -> Dict[str, Any]:
@@ -151,7 +151,7 @@ async def _(song_meta: SoundCloudSongMeta) -> Union[Song, None]:
     track = sc_service.sc.get_track(song_meta.track_id)
     if track is None:
         return None
-    playback_url = sc_service.get_playback_url(track)
+    playback_url = await sc_service.get_playback_url(track)
 
     return Song(
         title=track.title,

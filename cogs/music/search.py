@@ -1,10 +1,10 @@
 import logging
 import urllib.parse
-from typing import List
+from typing import List, Optional
+from discord.ext import commands
 
 from cogs.music.extractor import ExtractorFactory
-from cogs.music.song import SongMeta
-from discord.ext import commands
+from cogs.music.core.song import SongMeta
 
 _log = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ _log = logging.getLogger(__name__)
 class Search:
     "Methods: query"
 
-    def is_url(self, url_string):
+    def is_url(self, url_string: str) -> bool:
         try:
             # Attempt to parse the URL
             result = urllib.parse.urlparse(url_string)
@@ -22,13 +22,13 @@ class Search:
             # If parsing fails, the string is not a URL
             return False
 
-    def is_soundcloud(self, url: str):
+    def is_soundcloud(self, url: str) -> bool:
         parsed_url = urllib.parse.urlparse(url)
         netloc = parsed_url.netloc
         domain = netloc.split(".")[0]
         return domain.lower() == "soundcloud"
 
-    async def query(self, query: str, ctx: commands.Context, priority: bool = False) -> List[SongMeta] | None:
+    async def query(self, query: str, ctx: commands.Context, priority: bool = False) -> Optional[List[SongMeta]]:
         """
         Queries the provided string to fetch song metadata from either YouTube or SoundCloud.
 

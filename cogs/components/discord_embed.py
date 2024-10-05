@@ -3,32 +3,32 @@ from typing import List, Union
 import discord
 from discord.ext import commands
 
-from cogs.music.song import Song, SongMeta
+from cogs.music.core.song import Song, SongMeta
 
 
 class Embed:
     """Discord embed templates"""
 
-    def __init__(self, ctx: commands.Context | None = None):
+    def __init__(self, ctx: commands.Context | None = None) -> None:
         self.ctx = ctx
         self.embed = discord.Embed()
 
-    def help(self):
+    def help(self) -> None:
         pass
 
-    def normal(self, title=None, color=None, description=None):
+    def normal(self, title=None, color=None, description=None) -> discord.Embed:
         self.embed.title = title
         self.embed.color = color
         self.embed.description = description
         return self.embed
 
-    def leave_channel_message(self, minutes: int = 10):
+    def leave_channel_message(self, minutes: int = 10) -> discord.Embed:
         return self.normal(
             color=discord.Colour.red(),
             description=f"Leave the voice channel after {minutes} minutes of inactivity.",
         )
 
-    def now_playing_song(self, song: Song):
+    def now_playing_song(self, song: Song) -> discord.Embed:
         """Now playing template"""
         self.embed.title = "Now playing"
         self.embed.color = discord.Color.blue()
@@ -49,7 +49,7 @@ class Embed:
         )
         return self.embed
 
-    def in_playlist(self, playlist: List[Union[Song, SongMeta]]):
+    def in_playlist(self, playlist: List[SongMeta]) -> discord.Embed:
         """playlist template"""
         self.embed.title = "In the playlist (10 songs next)"
         self.embed.color = discord.Color.green()
@@ -64,7 +64,7 @@ class Embed:
         )
         return self.embed
 
-    def add_song(self, song, position: int, timewait: str):
+    def add_song(self, song, position: int, timewait: str) -> discord.Embed:
         self.embed.title = "Song added"
         self.embed.color = discord.Color.orange()
         self.embed.description = f"""
@@ -78,19 +78,19 @@ class Embed:
         )
         return self.embed
 
-    def error(self, description: str, title: str | None = None):
+    def error(self, description: str, title: str | None = None) -> discord.Embed:
         self.embed.title = title
         self.embed.color = discord.Color.red()
         self.embed.description = description
         return self.embed
 
-    def ok(self, description: str, title: str | None = None):
+    def ok(self, description: str, title: str | None = None) -> discord.Embed:
         self.embed.title = title
         self.embed.color = discord.Color.green()
         self.embed.description = description
         return self.embed
 
-    def tts_lang(self, lang_dict: dict):
+    def tts_lang(self, lang_dict: dict) -> discord.Embed:
         self.embed.title = "Language List"
         self.embed.color = discord.Color.green()
         self.embed.description = ""
@@ -98,7 +98,7 @@ class Embed:
             self.embed.description += f"{lang}: {lang_dict[lang]}\n"
         return self.embed
 
-    def game_free(self, game):
+    def game_free(self, game) -> discord.Embed:
         if len(game["title"]) > 256:
             self.embed.title = game["title"][:253] + "..."
         else:
@@ -113,7 +113,7 @@ class Embed:
         self.embed.set_footer(text="Reddit", icon_url="https://i.imgur.com/sdO8tAw.png")
         return self.embed
 
-    def end_playlist(self):
+    def end_playlist(self) -> discord.Embed:
         self.embed.title = "End playlist"
         self.embed.description = "There is no song in the playlist!"
         self.embed.color = discord.Color.green()
