@@ -11,6 +11,7 @@ from utils import convert_to_second, convert_to_time, get_time
 if TYPE_CHECKING:
     from cogs.music.controller import Audio
 
+
 class PlaylistManager:
     def __init__(self):
         self.playlist: PlayList = PlayList()
@@ -26,14 +27,18 @@ class PlaylistManager:
 
     def calculate_wait_time(self, latest_song: SongMeta, priority: bool) -> float:
         current_time = convert_to_second(get_time())
-        time_wait = self.current_song_duration - (current_time - self.current_song_start_time)
+        time_wait = self.current_song_duration - (
+            current_time - self.current_song_start_time
+        )
         if not priority:
             time_wait += convert_to_second(
                 self.playlist.time_wait(self.playlist.index(latest_song))
             )
         return time_wait
 
-    def get_song_added_embed(self, ctx: commands.Context, latest_song: SongMeta, priority: bool) -> Optional[discord.Embed]:
+    def get_song_added_embed(
+        self, ctx: commands.Context, latest_song: SongMeta, priority: bool
+    ) -> Optional[discord.Embed]:
         if self.playlist.size() > 0 and self.playlist.index(latest_song) is not None:
             time_wait = self.calculate_wait_time(latest_song, priority)
             return Embed(ctx).add_song(
@@ -42,12 +47,14 @@ class PlaylistManager:
                 timewait=convert_to_time(time_wait),
             )
         return None
+
+
 class PlayerManager(metaclass=SingletonMeta):
     """
     A class that manages the players for the music controller.
 
     Attributes:
-        players (dict[int, Audio]): A dictionary that stores the players, where the key is the guild ID 
+        players (dict[int, Audio]): A dictionary that stores the players, where the key is the guild ID
         and the value is an instance of the Audio class.
     """
 

@@ -1,6 +1,6 @@
 import logging
 import urllib.parse
-from typing import List, Optional
+from typing import List, Optional, Literal
 from discord.ext import commands
 
 from cogs.music.extractor import ExtractorFactory
@@ -28,7 +28,14 @@ class Search:
         domain = netloc.split(".")[0]
         return domain.lower() == "soundcloud"
 
-    async def query(self, query: str, ctx: commands.Context, priority: bool = False) -> Optional[List[SongMeta]]:
+    async def query(
+        self,
+        query: str,
+        ctx: commands.Context,
+        priority: bool = False,
+        provider: Optional[Literal["youtube", "soundcloud"]] = None,
+        limit: int = 1,
+    ) -> Optional[List[SongMeta]]:
         """
         Queries the provided string to fetch song metadata from either YouTube or SoundCloud.
 
@@ -46,24 +53,37 @@ class Search:
         """
         songs = []
 
-        if self.is_url(query):
-            if self.is_soundcloud(query):
+        if provider:
+            if provider == "youtube":
+                songs = await ExtractorFactory.get_extractor("youtube").get_data(
+                    query=query, ctx=ctx, is_search=not self.is_url(query), limit=limit
+                )
+            elif provider == "soundcloud":
                 songs = await ExtractorFactory.get_extractor("soundcloud").get_data(
-                    query=query, ctx=ctx
+                    query=query, ctx=ctx, is_search=not self.is_url(query), limit=limit
                 )
             else:
-                is_playlist = "/playlist?" in query or "&list=" in query
-                songs = await ExtractorFactory.get_extractor("youtube").get_data(
-                    query=query, ctx=ctx, is_playlist=is_playlist
-                )
+                _log.error(f"Invalid provider '{provider}'")
+                return ValueError(f"Invalid provider '{provider}'")
         else:
-            songs = await ExtractorFactory.get_extractor("soundcloud").get_data(
-                query=query, ctx=ctx, is_search=True
-            )
-            if not songs:
-                songs = await ExtractorFactory.get_extractor("youtube").get_data(
-                    query=query, ctx=ctx, is_search=True
+            if self.is_url(query):
+                if self.is_soundcloud(query):
+                    songs = await ExtractorFactory.get_extractor("soundcloud").get_data(
+                        query=query, ctx=ctx, limit=limit
+                    )
+                else:
+                    is_playlist = "/playlist?" in query or "&list=" in query
+                    songs = await ExtractorFactory.get_extractor("youtube").get_data(
+                        query=query, ctx=ctx, is_playlist=is_playlist, limit=limit
+                    )
+            else:
+                songs = await ExtractorFactory.get_extractor("soundcloud").get_data(
+                    query=query, ctx=ctx, is_search=True, limit=limit
                 )
+                if not songs:
+                    songs = await ExtractorFactory.get_extractor("youtube").get_data(
+                        query=query, ctx=ctx, is_search=True, limit=limit
+                    )
 
         if songs:
             if priority:

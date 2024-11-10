@@ -4,14 +4,19 @@ from abc import ABC, abstractmethod
 from typing import List, Literal, Union
 
 from discord.ext import commands
-from pytube import Playlist, Search, YouTube
-from pytube.exceptions import VideoUnavailable
+from pytubefix import Playlist, Search, YouTube
+from pytubefix.exceptions import VideoUnavailable
 from soundcloud import BasicTrack, MiniTrack
 from soundcloud.resource.track import Track
 
 from core.exceptions import ExtractException
 from cogs.music.services.soundcloud_service import SoundCloudService
-from cogs.music.core.song import (SongMeta, SoundCloudSongMeta, YouTubeSongMeta, format_duration)
+from cogs.music.core.song import (
+    SongMeta,
+    SoundCloudSongMeta,
+    YouTubeSongMeta,
+    format_duration,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -26,7 +31,12 @@ class Extractor(ABC):
 
     @abstractmethod
     async def get_data(
-        self, query, ctx, is_search=False, is_playlist=False
+        self,
+        query: str,
+        ctx: commands.Context,
+        is_search: bool = False,
+        is_playlist: bool = False,
+        limit: int = 1,
     ) -> List[SongMeta] | None:
         pass
 
@@ -45,17 +55,22 @@ class YoutubeExtractor(Extractor):
             ctx=ctx,
             playlist_name=playlist_name,
             webpage_url=yt.watch_url,
+            author=yt.author,
         )
 
     async def get_data(
-        self, query: str, ctx, is_search=False, is_playlist=False
+        self, query: str, ctx, is_search=False, is_playlist=False, limit=1
     ) -> List[YouTubeSongMeta] | None:
         if is_search:
-            results = Search(query).results
+            results = Search(query).videos
             if results:
-                result = results[0]
-                song = await self.create_song_metadata(result, ctx, None)
-                return [song]
+                songs = await asyncio.gather(
+                    *[
+                        self.create_song_metadata(result, ctx, None)
+                        for result in results[:limit]
+                    ]
+                )
+                return songs
             return None
 
         if is_playlist:
@@ -101,18 +116,28 @@ class SoundCloudExtractor(Extractor):
             webpage_url=(
                 track.permalink_url if not isinstance(track, MiniTrack) else None
             ),
+            author=(
+                track.user.username if not isinstance(track, MiniTrack) else "Unknown"
+            ),
         )
 
     async def get_data(
-        self, query, ctx, is_search=False
+        self, query, ctx, is_search=False, limit=1
     ) -> List[SoundCloudSongMeta] | None:
         if is_search:
             data = await self.soundcloud.search(query)
-            track = next(data)
-            while not isinstance(next(data), (Track, BasicTrack)):
+            tracks = []
+            for _ in range(limit):
                 track = next(data)
-            song = await self.create_song_metadata(track, ctx, None)  # type: ignore
-            return [song]
+                while not isinstance(track, (Track, BasicTrack)):
+                    track = next(data)
+                tracks.append(track)
+
+            songs = await asyncio.gather(
+                *[self.create_song_metadata(track, ctx, None) for track in tracks]
+            )
+
+            return songs
 
         data = await self.soundcloud.extract_song_from_url(query)
 

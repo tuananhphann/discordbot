@@ -70,10 +70,11 @@ class SongMeta:
     Mainly used for song queue, before the song was loaded.
     """
 
-    title: str | None
+    title: Optional[str]
     duration: str
-    playlist_name: str | None
-    webpage_url: str | None
+    playlist_name: Optional[str]
+    webpage_url: Optional[str]
+    author: Optional[str]
     ctx: commands.Context
 
     def update_meta(self, *args, **kwargs) -> None:
@@ -82,6 +83,7 @@ class SongMeta:
         - title
         - duration
         - webpage_url
+        - author
         """
         raise NotImplementedError("This method must be implemented in a subclass.")
 
@@ -99,6 +101,7 @@ class YouTubeSongMeta(SongMeta):
         self.title = video.title
         self.duration = format_duration(video.length)
         self.webpage_url = video.watch_url
+        self.author = video.author
 
 
 @dataclass(slots=True)
@@ -114,6 +117,7 @@ class SoundCloudSongMeta(SongMeta):
         self.title = track.title
         self.duration = format_duration(track.duration, unit="milliseconds")
         self.webpage_url = track.permalink_url
+        self.author = track.user.username
 
 
 @singledispatch
