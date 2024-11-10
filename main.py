@@ -18,15 +18,14 @@ class Bot(commands.Bot):
     def __init__(self) -> None:
         intents: discord.Intents = discord.Intents.default()
         intents.message_content = True
-        self.error_handler = ErrorHandler()
+        self.error_handler = ErrorHandler(self)
         super().__init__(command_prefix="?", intents=intents)
 
-    # async def setup_hook(self) -> None:
-    #     await self.tree.sync()
-    #     print(f"Synced slash command for {self.user}")
+    async def setup_hook(self) -> None:
+        self.tree.error(self.error_handler.handle_interaction_error)
 
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
-        await self.error_handler.handle_error(ctx, error)
+        await self.error_handler.handle_command_error(ctx, error)
 
 
 bot = Bot()
@@ -50,7 +49,7 @@ async def main() -> None:
         token = get_env(key="TOKEN")
         if token is None:
             raise ValueError("Cannot find token in env.")
-        await bot.add_cog(Music(bot, PlayerManager(), ErrorHandler()))
+        await bot.add_cog(Music(bot, PlayerManager(), ErrorHandler(bot)))
         await bot.add_cog(Greeting(bot))
         await bot.add_cog(TTS(bot))
         await bot.add_cog(Admin(bot))
