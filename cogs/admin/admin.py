@@ -9,7 +9,7 @@ class Admin(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="shutdown", description="Shutdown the bot.")
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     async def shutdown(self, interaction: discord.Interaction) -> None:
         for player in PlayerManager().players.values():
             player.destroy()
@@ -22,7 +22,7 @@ class Admin(commands.Cog):
         await self.bot.close()
 
     @app_commands.command(name="sync", description="Sync the guild's slash command.")
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     async def sync(self, interaction: discord.Interaction):
         ctx = await self.bot.get_context(interaction)
         self.bot.tree.copy_global_to(guild=ctx.guild)
@@ -30,14 +30,14 @@ class Admin(commands.Cog):
         await ctx.send("Sync local guild success")
 
     @app_commands.command(name="sync_all", description="Sync all slash command.")
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     async def sync_all(self, interaction: discord.Interaction):
         ctx = await self.bot.get_context(interaction)
         await self.bot.tree.sync()
         await ctx.send("Sync all success")
 
     @app_commands.command(name="remove_command_all", description="Remove all command.")
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     async def remove_command_all(self, interaction: discord.Interaction):
         ctx = await self.bot.get_context(interaction)
         self.bot.tree.clear_commands(guild=ctx.guild)
