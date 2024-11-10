@@ -3,10 +3,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Literal
 
 from cogs.music.manager import PlayerManager, PlaylistManager
 from cogs.music.core.song import Song, SongMeta
+from cogs.music.view.view import MusicView
 import constants
 import discord
 from cogs.components.discord_embed import Embed
@@ -16,6 +17,7 @@ from discord.ext import commands
 from utils import Timer, convert_to_second, get_time
 
 _log = logging.getLogger(__name__)
+
 
 class Audio:
     def __init__(self, *args, **kwargs) -> None:
@@ -67,7 +69,9 @@ class Audio:
         """
         async with self.lock:
             if not self.is_playing:
-                song: Optional[Song] = await self.playlist_manager.playlist.get_next_prepared()
+                song: Optional[Song] = (
+                    await self.playlist_manager.playlist.get_next_prepared()
+                )
                 if song is None:
                     self.current_song = None
                     if ctx is not None:
@@ -126,7 +130,9 @@ class Audio:
         self.playlist_manager.current_song = song
         ctx.voice_client.play(source, after=lambda x: self.after_play(self.bot, ctx))
 
-    async def process_query(self, ctx: commands.Context, query: str, priority: bool = False) -> None:
+    async def process_query(
+        self, ctx: commands.Context, query: str, priority: bool = False
+    ) -> None:
         # assign this context for timeout_handler can work.
         self.ctx = ctx
 
@@ -140,21 +146,89 @@ class Audio:
         else:
             await self._send_no_songs_found_message()
 
-    async def _search_songs(self, query: str, priority: bool = False) -> Union[List[SongMeta], None]:
-        return await Search().query(query, self.ctx, priority)
+    async def handle_track_selection_in_search(
+        self, interaction: discord.Interaction, track: SongMeta
+    ):
+        """
+        Handles the selection of a track from a search result.
 
+        This method adds the selected track to the playlist and sends a message
+        indicating that the song has been added.
 
-    def _log_song_addition(self, song_count: int, guild_id: int, query: str, start_time: float) -> None:
+        Args:
+            interaction (discord.Interaction): The interaction object that triggered this method.
+            track (SongMeta): The metadata of the selected song.
+
+        Returns:
+            None
+        """
+        await self.playlist_manager.add_songs([track], False)
+        await self._send_song_added_message(track, False)
+
+    async def handle_track_selection_in_playlist(
+        self, interaction: discord.Interaction, track: SongMeta
+    ):
+        """
+        Handles the selection of a track within a playlist and moves it to the next position in the queue.
+
+        Args:
+            interaction (discord.Interaction): The interaction object that triggered this action.
+            track (SongMeta): The track that has been selected to move within the playlist.
+
+        Returns:
+            None
+        """
+        idx = self.playlist_manager.playlist.index(track)
+        if idx is not None:
+            await self.playlist_manager.playlist.remove_by_song(track)
+            await self.playlist_manager.playlist.add_next(track)
+            await interaction.followup.send(
+                f"Moved {track.title} to next in the playlist.", ephemeral=True
+            )
+
+    async def process_search(
+        self,
+        ctx: commands.Context,
+        query: str,
+        provider: Optional[Literal["youtube", "soundcloud"]] = None,
+    ) -> None:
+        self.ctx = ctx
+
+        songs: Optional[List[SongMeta]] = await self._search_songs(
+            query, provider=provider, limit=10
+        )
+        if songs:
+            view = MusicView(songs, self.handle_track_selection_in_search)
+            await ctx.send(embed=view.create_embed(), view=view)
+        else:
+            await self._send_no_songs_found_message()
+
+    async def _search_songs(
+        self,
+        query: str,
+        priority: bool = False,
+        provider: Optional[Literal["youtube", "soundcloud"]] = None,
+        limit: int = 1,
+    ) -> Optional[List[SongMeta]]:
+        return await Search().query(query, self.ctx, priority, provider, limit)
+
+    def _log_song_addition(
+        self, song_count: int, guild_id: int, query: str, start_time: float
+    ) -> None:
         end_time = time.time()
         _log.info(
             f"Added {song_count} song(s) to guild '{guild_id}' playlist in {round(end_time-start_time,2)} seconds from query '{query}'."
         )
 
-    async def _send_song_added_message(self, latest_song: SongMeta, priority: bool) -> None:
-        embed = self.playlist_manager.get_song_added_embed(self.ctx, latest_song, priority)
+    async def _send_song_added_message(
+        self, latest_song: SongMeta, priority: bool
+    ) -> None:
+        embed = self.playlist_manager.get_song_added_embed(
+            self.ctx, latest_song, priority
+        )
         if embed is not None:
             await self.ctx.send(embed=embed)
-    
+
     async def _send_no_songs_found_message(self) -> None:
         await self.ctx.send(embed=Embed().error("No songs were found!"))
 
