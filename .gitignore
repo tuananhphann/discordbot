@@ -16,6 +16,7 @@ test*
 .idea/
 logs/
 table.py
+*.db
 
 # C extensions
 *.so
