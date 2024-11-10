@@ -9,8 +9,15 @@ from cogs.music.manager import PlayerManager
 from cogs.music.music import Music
 from cogs.tts.tts import TTS
 from discord.ext import commands
-from utils import cleanup, get_env, setup_logger
+from utils import (
+    cleanup,
+    get_env,
+    setup_logger,
+    check_ffmpeg,
+    check_python_compatibility,
+)
 from core.error_handler import ErrorHandler
+
 _log = logging.getLogger(name=__name__)
 
 
@@ -39,6 +46,9 @@ async def on_ready() -> None:
 
 
 async def main() -> None:
+    check_python_compatibility((3, 12))
+    check_ffmpeg()
+
     setup_logger(name="bot")
     setup_logger(name="soundcloud")
     setup_logger(name="discord", level=logging.INFO)

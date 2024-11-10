@@ -4,7 +4,8 @@ import logging
 import logging.handlers
 import os
 from datetime import datetime, timedelta
-from logging import Logger
+import sys
+import shutil
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Literal, Union
 
@@ -148,6 +149,20 @@ def cleanup() -> None:
         print("There was some errors when trying to delete garbages:", e)
     finally:
         print("Cleanup completed.")
+
+
+def check_python_compatibility(minimum_version=(3, 12)):
+    current_version = sys.version_info[:2]  # Get major.minor
+    if current_version < minimum_version:
+        raise Warning(
+            f"Warning: Python {'.'.join(map(str, minimum_version))} or higher is required. "
+            f"You are using Python {'.'.join(map(str, current_version))}."
+        )
+
+
+def check_ffmpeg():
+    if shutil.which("ffmpeg") is None:
+        raise Warning("FFmpeg is not installed. Please install FFmpeg to use this bot.")
 
 
 class Timer:
