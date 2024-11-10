@@ -3,8 +3,8 @@ from functools import singledispatch
 from typing import Any, Dict, List, Union, Optional
 
 from discord.ext import commands
-from pytube import YouTube
-from pytube.exceptions import VideoUnavailable
+from pytubefix import YouTube
+from pytubefix.exceptions import VideoUnavailable
 from soundcloud import BasicTrack, Track
 
 from cogs.music.core.album import Album
