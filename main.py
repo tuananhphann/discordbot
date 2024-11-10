@@ -44,7 +44,7 @@ async def main() -> None:
     setup_logger(name="discord", level=logging.INFO)
     setup_logger(name="cogs")
     setup_logger(name="discordbot")
-    setup_logger(name="pytube", level=logging.INFO)
+    setup_logger(name="pytubefix", level=logging.INFO)
 
     async with bot:
         token = get_env(key="TOKEN")
