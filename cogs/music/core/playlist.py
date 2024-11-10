@@ -3,7 +3,14 @@ import logging
 from collections import deque
 from typing import Deque, List, Optional, TYPE_CHECKING
 
-from cogs.music.core.song import Song, SongMeta, SoundCloudSongMeta, YouTubeSongMeta, createSong, get_songs_info
+from cogs.music.core.song import (
+    Song,
+    SongMeta,
+    SoundCloudSongMeta,
+    YouTubeSongMeta,
+    createSong,
+    get_songs_info,
+)
 from patterns.observe import Observable, Observer
 from utils import convert_to_second, convert_to_time
 
@@ -11,6 +18,7 @@ if TYPE_CHECKING:
     from cogs.music.controller import Audio
 
 _logger = logging.getLogger(__name__)
+
 
 class PlayList(Observable):
     def __init__(self) -> None:
@@ -60,6 +68,53 @@ class PlayList(Observable):
             return self._q.index(song)
         except ValueError:
             return None
+
+    def get_at(self, index: int) -> Optional[SongMeta]:
+        """
+        Get the song at a specified index in the queue.
+
+        Args:
+            index (int): The index of the song to retrieve.
+
+        Returns:
+            SongMeta | None: The song at the specified index, or None if the index is out of range.
+        """
+        try:
+            return self._q[index]
+        except IndexError:
+            return None
+
+    async def remove_by_index(self, index: int) -> None:
+        """
+        Remove a song from the queue at a specified index.
+
+        Args:
+            index (int): The index of the song to remove.
+
+        Returns:
+            None
+        """
+        async with self.lock:
+            try:
+                self._q.remove(self._q[index])
+            except IndexError:
+                pass
+
+    async def remove_by_song(self, song: SongMeta) -> None:
+        """
+        Remove a song from the queue.
+
+        Args:
+            song (SongMeta): The song to remove from the queue.
+
+        Returns:
+            None
+        """
+        async with self.lock:
+            try:
+                self._q.remove(song)
+            except ValueError:
+                pass
 
     def size(self) -> int:
         """
@@ -212,8 +267,9 @@ class PlayList(Observable):
         _logger.debug("Triggering update all song meta info.")
         asyncio.create_task(self.__update_all_song_meta())
 
+
 class PlaylistObserver(Observer):
-    def __init__(self, player: 'Audio') -> None:
+    def __init__(self, player: "Audio") -> None:
         super().__init__()
         self.player = player
 
