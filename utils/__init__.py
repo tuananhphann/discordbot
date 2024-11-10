@@ -5,6 +5,7 @@ import logging.handlers
 import os
 from datetime import datetime, timedelta
 from logging import Logger
+from pathlib import Path
 from typing import Any, Callable, Coroutine, Literal, Union
 
 from dotenv import find_dotenv, load_dotenv
@@ -82,22 +83,49 @@ def get_env(key: str) -> Union[str, None]:
     return TOKEN
 
 
-def setup_logger(name: str, level=logging.DEBUG) -> None:
-    """Setup a logger for the bot."""
-    logger: Logger = logging.getLogger(name)
+def setup_logger(name: str, level=logging.DEBUG):
+    """Set up logging configuration"""
+    # Create logs directory if it doesn't exist
+    Path(f"{constants.CUR_PATH}/logs").mkdir(exist_ok=True)
+
+    # Create logger
+    logger = logging.getLogger(name)
     logger.setLevel(level)
-    handler = logging.handlers.RotatingFileHandler(
-        filename=constants.CUR_PATH + "/discord.log",
-        encoding="utf-8",
-        maxBytes=32 * 1024 * 1024,  # 32 MiB
-        backupCount=5,  # Rotate through 5 files
-    )
+
+    # Create formatters
     dt_fmt = "%Y-%m-%d %H:%M:%S"
     formatter = logging.Formatter(
         "[{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
     )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+
+    # File handler for all logs
+    file_handler = logging.handlers.RotatingFileHandler(
+        filename="logs/bot.log",
+        encoding="utf-8",
+        maxBytes=32 * 1024 * 1024,  # 32 MiB
+        backupCount=5,
+    )
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # File handler for errors only
+    error_handler = logging.handlers.RotatingFileHandler(
+        filename="logs/error.log",
+        encoding="utf-8",
+        maxBytes=32 * 1024 * 1024,  # 32 MiB
+        backupCount=5,
+    )
+    error_handler.setFormatter(formatter)
+    error_handler.setLevel(logging.ERROR)
+    logger.addHandler(error_handler)
+
+    # Optional console handler
+    # console_handler = logging.StreamHandler()
+    # console_handler.setFormatter(formatter)
+    # console_handler.setLevel(
+    #     logging.WARNING
+    # )  # Only show warnings and errors in console
+    # logger.addHandler(console_handler)
 
 
 def cleanup() -> None:
