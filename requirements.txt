@@ -1,7 +1,7 @@
 discord.py
 discord.py[voice]
 gTTS~=2.5.1
-pytube
+pytubefix
 python-dotenv~=1.0.1
 beautifulsoup4~=4.12.3
 speedtest-cli
