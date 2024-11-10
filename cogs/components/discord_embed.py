@@ -118,3 +118,17 @@ class Embed:
         self.embed.description = "There is no song in the playlist!"
         self.embed.color = discord.Color.green()
         return self.embed
+
+    def summary(
+        self, total_income, total_expense, balance, most_expense, most_income, month
+    ) -> discord.Embed:
+        self.embed.title = f"Summary of your account in {month}"
+        self.embed.color = discord.Color.green()
+        self.embed.description = f"""
+        Total income: {total_income}
+        Total expense: {total_expense}
+        Balance: {balance}
+        Most expense: {most_expense}
+        Most income: {most_income}
+        """
+        return self.embed
