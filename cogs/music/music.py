@@ -144,7 +144,7 @@ class Music(commands.Cog):
                         interaction.guild_id
                     ].handle_track_selection_in_playlist,
                 )
-                await ctx.send(embed=view.create_embed(), view=view)
+                view.message = await ctx.send(embed=view.create_embed(), view=view)
         else:
             await ctx.send(
                 embed=discord.Embed(

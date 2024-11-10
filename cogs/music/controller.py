@@ -146,6 +146,23 @@ class Audio:
         else:
             await self._send_no_songs_found_message()
 
+    async def process_search(
+        self,
+        ctx: commands.Context,
+        query: str,
+        provider: Optional[Literal["youtube", "soundcloud"]] = None,
+    ) -> None:
+        self.ctx = ctx
+
+        songs: Optional[List[SongMeta]] = await self._search_songs(
+            query, provider=provider, limit=10
+        )
+        if songs:
+            view = MusicView(songs, self.handle_track_selection_in_search)
+            view.message = await ctx.send(embed=view.create_embed(), view=view)
+        else:
+            await self._send_no_songs_found_message()
+
     async def handle_track_selection_in_search(
         self, interaction: discord.Interaction, track: SongMeta
     ):
@@ -185,23 +202,6 @@ class Audio:
             await interaction.followup.send(
                 f"Moved {track.title} to next in the playlist.", ephemeral=True
             )
-
-    async def process_search(
-        self,
-        ctx: commands.Context,
-        query: str,
-        provider: Optional[Literal["youtube", "soundcloud"]] = None,
-    ) -> None:
-        self.ctx = ctx
-
-        songs: Optional[List[SongMeta]] = await self._search_songs(
-            query, provider=provider, limit=10
-        )
-        if songs:
-            view = MusicView(songs, self.handle_track_selection_in_search)
-            await ctx.send(embed=view.create_embed(), view=view)
-        else:
-            await self._send_no_songs_found_message()
 
     async def _search_songs(
         self,
