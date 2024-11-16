@@ -28,6 +28,11 @@ class Search:
         domain = netloc.split(".")[0]
         return domain.lower() == "soundcloud"
 
+    def is_youtube(self, url: str) -> bool:
+        parsed_url = urllib.parse.urlparse(url)
+        netloc = parsed_url.netloc
+        return netloc.lower() == "www.youtube.com" or netloc.lower() == "youtu.be"
+
     async def query(
         self,
         query: str,
@@ -67,21 +72,24 @@ class Search:
                 return ValueError(f"Invalid provider '{provider}'")
         else:
             if self.is_url(query):
-                if self.is_soundcloud(query):
-                    songs = await ExtractorFactory.get_extractor("soundcloud").get_data(
-                        query=query, ctx=ctx, limit=limit
-                    )
-                else:
+                if self.is_youtube(query):
                     is_playlist = "/playlist?" in query or "&list=" in query
                     songs = await ExtractorFactory.get_extractor("youtube").get_data(
                         query=query, ctx=ctx, is_playlist=is_playlist, limit=limit
                     )
+                elif self.is_soundcloud(query):
+                    songs = await ExtractorFactory.get_extractor("soundcloud").get_data(
+                        query=query, ctx=ctx, limit=limit
+                    )
+                else:
+                    _log.error(f"Unsupported URL '{query}'")
+                    raise ValueError(f"Unsupported URL '{query}'")
             else:
-                songs = await ExtractorFactory.get_extractor("soundcloud").get_data(
+                songs = await ExtractorFactory.get_extractor("youtube").get_data(
                     query=query, ctx=ctx, is_search=True, limit=limit
                 )
                 if not songs:
-                    songs = await ExtractorFactory.get_extractor("youtube").get_data(
+                    songs = await ExtractorFactory.get_extractor("soundcloud").get_data(
                         query=query, ctx=ctx, is_search=True, limit=limit
                     )
 
