@@ -72,7 +72,7 @@ class Music(commands.Cog):
         self,
         interaction: discord.Interaction,
         query: str,
-        provider: Optional[Literal["youtube", "soundcloud"]] = 'soundcloud',
+        provider: Optional[Literal["youtube", "soundcloud"]] = 'youtube',
     ) -> None:
         if not interaction.response.is_done():
             await self.set_reply_timeout(interaction)
