@@ -11,8 +11,7 @@ from discord.ext import commands
 from pytubefix import Search, YouTube
 from pytubefix.exceptions import VideoUnavailable
 from soundcloud import BasicTrack, Track
-from utils import (format_duration, format_playback_count, safe_format_date,
-                   safe_getattr)
+from utils import format_duration, format_playback_count, safe_format_date, safe_getattr
 
 _logger = logging.getLogger(__name__)
 
@@ -204,10 +203,7 @@ async def _(song_meta: SpotifySongMeta) -> Union[Song, None]:
 
     for vid in videos:
         print(song.name, vid.title, song.duration_ms, vid.length * 1000)
-        if (
-            song.name in vid.title
-            or abs(song.duration_ms - vid.length * 1000) < 60 * 1000
-        ):
+        if abs(song.duration_ms - vid.length * 1000) < (60 * 1000) or song.name in vid.title:
             video = vid
             break
 
