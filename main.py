@@ -1,5 +1,6 @@
 import sys
 import shutil
+import traceback
 
 
 def check_python_compatibility(required_version: tuple) -> None:
@@ -27,4 +28,5 @@ if __name__ == "__main__":
         bot.run_bot()
     except Exception as e:
         print(f"Error during startup: {e}")
+        print(traceback.format_exc())
         sys.exit(1)
