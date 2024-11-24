@@ -3,20 +3,18 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Literal, Union
 
+from cogs.music.core.song import (SongMeta, SoundCloudSongMeta,
+                                  SpotifySongMeta, YouTubeSongMeta,
+                                  format_duration)
+from cogs.music.services.soundcloud.service import SoundCloudService
+from cogs.music.services.spotify import album, playlist, search, track
+from cogs.music.services.spotify.service import SpotifyService
+from core.exceptions import ExtractException
 from discord.ext import commands
 from pytubefix import Playlist, Search, YouTube
 from pytubefix.exceptions import VideoUnavailable
 from soundcloud import BasicTrack, MiniTrack
 from soundcloud.resource.track import Track
-
-from core.exceptions import ExtractException
-from cogs.music.services.soundcloud_service import SoundCloudService
-from cogs.music.core.song import (
-    SongMeta,
-    SoundCloudSongMeta,
-    YouTubeSongMeta,
-    format_duration,
-)
 
 _log = logging.getLogger(__name__)
 
@@ -153,11 +151,75 @@ class SoundCloudExtractor(Extractor):
         return songs
 
 
+class SpotifyExtractor(Extractor):
+    def __init__(self) -> None:
+        super().__init__()
+        self.sp = SpotifyService()
+
+    async def create_song_metadata(
+        self,
+        data: Union[search.Track, playlist.Track, track.Track, album.Track],
+        ctx,
+        playlist_name,
+    ) -> SpotifySongMeta:
+        return SpotifySongMeta(
+            title=data.name,
+            duration=format_duration(data.duration_ms, unit="milliseconds"),
+            track_id=data.id,
+            ctx=ctx,
+            playlist_name=playlist_name,
+            webpage_url=data.external_urls.spotify,
+            author=", ".join([artist.name for artist in data.artists]),
+        )
+
+    async def get_data(
+        self,
+        query: str,
+        ctx: commands.Context,
+        is_search: bool = False,
+        is_playlist: bool = False,
+        limit: int = 1,
+    ) -> List[SpotifySongMeta] | None:
+        if is_search:
+            data = self.sp.search(query, limit=limit)
+            songs = await asyncio.gather(
+                *[self.create_song_metadata(track, ctx, None) for track in data.items]
+            )
+            return songs
+
+        data = await self.sp.resolve_url(query)
+        if isinstance(data, playlist.Playlist):
+            playlist_name = data.name
+            songs = await asyncio.gather(
+                *[
+                    self.create_song_metadata(track.track, ctx, playlist_name)
+                    for track in data.tracks.items
+                ]
+            )
+        elif isinstance(data, album.Album):
+            playlist_name = data.name
+            songs = await asyncio.gather(
+                *[
+                    self.create_song_metadata(track, ctx, playlist_name)
+                    for track in data.tracks.items
+                ]
+            )
+        elif isinstance(data, track.Track):
+            songs = [await self.create_song_metadata(data, ctx, None)]
+        return songs
+
+
 class ExtractorFactory:
-    extractors = {"youtube": YoutubeExtractor, "soundcloud": SoundCloudExtractor}
+    extractors = {
+        "youtube": YoutubeExtractor,
+        "soundcloud": SoundCloudExtractor,
+        "spotify": SpotifyExtractor,
+    }
 
     @classmethod
-    def get_extractor(cls, extractor: Literal["youtube", "soundcloud"]) -> Extractor:
+    def get_extractor(
+        cls, extractor: Literal["youtube", "soundcloud", "spotify"]
+    ) -> Extractor:
         if extractor in cls.extractors:
             return cls.extractors[extractor]()
         else:

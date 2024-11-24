@@ -1,15 +1,20 @@
+import logging
 from dataclasses import dataclass
 from functools import singledispatch
-from typing import Any, Dict, List, Union, Optional
-
-from discord.ext import commands
-from pytubefix import YouTube
-from pytubefix.exceptions import VideoUnavailable
-from soundcloud import BasicTrack, Track
+from typing import Any, Dict, List, Optional, Union
 
 from cogs.music.core.album import Album
-from cogs.music.services.soundcloud_service import SoundCloudService
-from utils import format_duration, format_playback_count, safe_format_date, safe_getattr
+from cogs.music.services.soundcloud.service import SoundCloudService
+from cogs.music.services.spotify import track
+from cogs.music.services.spotify.service import SpotifyService
+from discord.ext import commands
+from pytubefix import Search, YouTube
+from pytubefix.exceptions import VideoUnavailable
+from soundcloud import BasicTrack, Track
+from utils import (format_duration, format_playback_count, safe_format_date,
+                   safe_getattr)
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -42,7 +47,7 @@ class Song:
     upload_date: str
     thumbnail: str
     webpage_url: str
-    album: Optional['Album']
+    album: Optional["Album"]
     context: commands.Context
 
     def info(self) -> Dict[str, Any]:
@@ -120,6 +125,22 @@ class SoundCloudSongMeta(SongMeta):
         self.author = track.user.username
 
 
+@dataclass(slots=True)
+class SpotifySongMeta(SongMeta):
+    """
+    Represents a song metadata for Spotify, contains data used for extract a song's information.
+    Mainly used for song queue, before the song was loaded.
+    """
+
+    track_id: str
+
+    def update_meta(self, track: track.Track) -> None:
+        self.title = track.name
+        self.duration = format_duration(track.duration_ms, unit="milliseconds")
+        self.webpage_url = track.external_urls.spotify
+        self.author = track.artists[0].name
+
+
 @singledispatch
 async def createSong(song_meta: SongMeta) -> Union[Song, None]:
     raise NotImplementedError(f"Cannot create song from {type(song_meta)}")
@@ -171,9 +192,52 @@ async def _(song_meta: SoundCloudSongMeta) -> Union[Song, None]:
     )
 
 
+@createSong.register  # type: ignore
+async def _(song_meta: SpotifySongMeta) -> Union[Song, None]:
+    sp_service = SpotifyService()
+    song = sp_service.get_track(song_meta.track_id)
+
+    query = f"'{song.name} + {','.join(artist.name for artist in song.artists)}' music"
+    video = None  # type: ignore
+    videos = Search(query).videos
+    _logger.info(f'Creating Spotify song: Searching for "{query}"')
+
+    for vid in videos:
+        print(song.name, vid.title, song.duration_ms, vid.length * 1000)
+        if (
+            song.name in vid.title
+            or abs(song.duration_ms - vid.length * 1000) < 60 * 1000
+        ):
+            video = vid
+            break
+
+    # If no video match criteria, use the first video
+    if video is None:
+        video = videos[0]
+
+    playback_url = video.streams.get_audio_only().url
+    _logger.info(
+        f'Creating Spotify song: Actual playback of "{song.name}" is from "[{video.title}]({video.watch_url})"'
+    )
+
+    return Song(
+        title=song.name,
+        playback_url=playback_url,
+        uploader=", ".join(artist.name for artist in song.artists),
+        playback_count="Unknown",
+        duration=song_meta.duration,
+        upload_date=song.album.release_date,
+        thumbnail=song.album.images[0].url,
+        webpage_url=song.external_urls.spotify,
+        album=Album(song.album.name) if song.album.name else None,
+        context=song_meta.ctx,
+    )
+
+
 async def get_songs_info(songs_need_to_update: List[SongMeta]) -> List[SongMeta]:
     sc_songs: List[SoundCloudSongMeta] = []
     yt_songs: List[YouTubeSongMeta] = []
+    sp_songs: List[SpotifySongMeta] = []
 
     # Separate songs by their type
     for song in songs_need_to_update:
@@ -181,6 +245,8 @@ async def get_songs_info(songs_need_to_update: List[SongMeta]) -> List[SongMeta]
             sc_songs.append(song)
         elif isinstance(song, YouTubeSongMeta):
             yt_songs.append(song)
+        elif isinstance(song, SpotifySongMeta):
+            sp_songs.append(song)
 
     # Get YouTube info
     for song in yt_songs:
@@ -195,11 +261,19 @@ async def get_songs_info(songs_need_to_update: List[SongMeta]) -> List[SongMeta]
         if song:
             song.update_meta(track)
 
+    # Get Spotify info
+    sp_service = SpotifyService()
+    for song in sp_songs:
+        track = sp_service.get_track(song.track_id)
+        song.update_meta(track)
+
     # Merge all songs back to the original list
     for song in songs_need_to_update:
         if isinstance(song, SoundCloudSongMeta):
             song = next((s for s in sc_songs if s.track_id == song.track_id), song)
         elif isinstance(song, YouTubeSongMeta):
             song = next((s for s in yt_songs if s.video_id == song.video_id), song)
+        elif isinstance(song, SpotifySongMeta):
+            song = next((s for s in sp_songs if s.track_id == song.track_id), song)
 
     return songs_need_to_update

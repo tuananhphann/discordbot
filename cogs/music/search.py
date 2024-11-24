@@ -1,10 +1,10 @@
 import logging
 import urllib.parse
-from typing import List, Optional, Literal
-from discord.ext import commands
+from typing import List, Literal, Optional
 
-from cogs.music.extractor import ExtractorFactory
 from cogs.music.core.song import SongMeta
+from cogs.music.extractor import ExtractorFactory
+from discord.ext import commands
 
 _log = logging.getLogger(__name__)
 
@@ -33,12 +33,17 @@ class Search:
         netloc = parsed_url.netloc
         return netloc.lower() == "www.youtube.com" or netloc.lower() == "youtu.be"
 
+    def is_spotify(self, url: str) -> bool:
+        parsed_url = urllib.parse.urlparse(url)
+        netloc = parsed_url.netloc
+        return netloc.lower() == "open.spotify.com"
+
     async def query(
         self,
         query: str,
         ctx: commands.Context,
         priority: bool = False,
-        provider: Optional[Literal["youtube", "soundcloud"]] = None,
+        provider: Optional[Literal["youtube", "soundcloud", "spotify"]] = None,
         limit: int = 1,
     ) -> Optional[List[SongMeta]]:
         """
@@ -67,6 +72,10 @@ class Search:
                 songs = await ExtractorFactory.get_extractor("soundcloud").get_data(
                     query=query, ctx=ctx, is_search=not self.is_url(query), limit=limit
                 )
+            elif provider == "spotify":
+                songs = await ExtractorFactory.get_extractor("spotify").get_data(
+                    query=query, ctx=ctx, is_search=not self.is_url(query), limit=limit
+                )
             else:
                 _log.error(f"Invalid provider '{provider}'")
                 return ValueError(f"Invalid provider '{provider}'")
@@ -79,6 +88,10 @@ class Search:
                     )
                 elif self.is_soundcloud(query):
                     songs = await ExtractorFactory.get_extractor("soundcloud").get_data(
+                        query=query, ctx=ctx, limit=limit
+                    )
+                elif self.is_spotify(query):
+                    songs = await ExtractorFactory.get_extractor("spotify").get_data(
                         query=query, ctx=ctx, limit=limit
                     )
                 else:
