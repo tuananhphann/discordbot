@@ -12,3 +12,4 @@ requests
 bs4
 urllib3
 soundcloud-v2
+spotipy
