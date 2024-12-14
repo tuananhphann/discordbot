@@ -11,6 +11,7 @@ from cogs.music.core.song import (
     createSong,
     get_songs_info,
 )
+from core.exceptions import MusicException
 from patterns.observe import Observable, Observer
 from utils import convert_to_second, convert_to_time
 
@@ -208,14 +209,21 @@ class PlayList(Observable):
             id = None
             if isinstance(song_meta, YouTubeSongMeta):
                 id = song_meta.video_id
+                reason = (
+                    f"The requested YouTube song '{song_meta.title}' may not available"
+                )
             elif isinstance(song_meta, SoundCloudSongMeta):
                 id = song_meta.track_id
+                reason = f"The requested SoundCloud song '{song_meta.title}' may not avaialable. Or the song ID is not correct."
 
             _logger.error(
-                f"Failed to create song with type: {type(song_meta)}. Title: {song_meta.title}. ID: {id}."
+                f"Failed to create song with type: {type(song_meta)}. Title: {song_meta.title}. ID: {id}. Reason: {reason}"
             )
+
             if self.size() > 0:
                 return await self.get_next_prepared()
+            else:
+                raise MusicException(reason)
 
         return song_obj
 
