@@ -1,4 +1,4 @@
-class MusicError(Exception):
+class MusicException(Exception):
     """
     Custom exception class for errors related to music operations.
 
