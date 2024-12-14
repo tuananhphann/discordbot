@@ -151,6 +151,7 @@ async def _(song_meta: YouTubeSongMeta) -> Union[Song, None]:
     try:
         video.check_availability()
     except VideoUnavailable:
+        _logger.error(f"This YouTube video is unavailable. ID: {song_meta.video_id}. Title: {song_meta.title}")
         return None
     playback_url = video.streams.get_audio_only().url
 
@@ -174,6 +175,7 @@ async def _(song_meta: SoundCloudSongMeta) -> Union[Song, None]:
 
     track = sc_service.sc.get_track(song_meta.track_id)
     if track is None:
+        _logger.error(f"This SoundCloud track is unavailable. ID: {song_meta.track_id}. Title: {song_meta.title}")
         return None
     playback_url = await sc_service.get_playback_url(track)
 
