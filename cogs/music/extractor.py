@@ -3,12 +3,17 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Literal, Union
 
-from cogs.music.core.song import (SongMeta, SoundCloudSongMeta,
-                                  SpotifySongMeta, YouTubeSongMeta,
-                                  format_duration)
+from cogs.music.core.song import (
+    SongMeta,
+    SoundCloudSongMeta,
+    SpotifySongMeta,
+    YouTubeSongMeta,
+    format_duration,
+)
 from cogs.music.services.soundcloud.service import SoundCloudService
 from cogs.music.services.spotify import album, playlist, search, track
 from cogs.music.services.spotify.service import SpotifyService
+from cogs.music.services.youtube.service import YoutubeService
 from core.exceptions import ExtractException
 from discord.ext import commands
 from pytubefix import Playlist, Search, YouTube
@@ -83,6 +88,8 @@ class YoutubeExtractor(Extractor):
         else:
             try:
                 yt = YouTube(query)
+                yt.po_token_verifier = YoutubeService.getPoToken
+                yt.use_po_token = True
             except VideoUnavailable:
                 return None
 
