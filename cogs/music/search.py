@@ -33,6 +33,11 @@ class Search:
         netloc = parsed_url.netloc
         return netloc.lower() == "www.youtube.com" or netloc.lower() == "youtu.be"
 
+    def is_youtube_music(self, url: str) -> bool:
+        parsed_url = urllib.parse.urlparse(url)
+        netloc = parsed_url.netloc
+        return netloc.lower() == "music.youtube.com"
+
     def is_spotify(self, url: str) -> bool:
         parsed_url = urllib.parse.urlparse(url)
         netloc = parsed_url.netloc
@@ -81,7 +86,9 @@ class Search:
                 return ValueError(f"Invalid provider '{provider}'")
         else:
             if self.is_url(query):
-                if self.is_youtube(query):
+                if self.is_youtube(query) or self.is_youtube_music(query):
+                    if self.is_youtube_music(query):
+                        query = query.replace("music.", "")
                     is_playlist = "/playlist?" in query or "&list=" in query
                     songs = await ExtractorFactory.get_extractor("youtube").get_data(
                         query=query, ctx=ctx, is_playlist=is_playlist, limit=limit
