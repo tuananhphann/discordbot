@@ -13,3 +13,6 @@ bs4
 urllib3
 soundcloud-v2
 spotipy
+selenium
+webdriver-manager
+selenium-wire
