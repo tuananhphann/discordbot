@@ -12,41 +12,33 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build Application
-    runs-on: self-hosted
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Install `uv` CLI
-      uses: astral-sh/setup-uv@v5
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-
-    - name: Create and Activate Virtual Environment
-      run: |
-        uv venv
-        . .venv/bin/activate
-
-    - name: Install Dependencies
-      run: |
-        uv pip install -Ur requirements.txt || { echo "Dependency installation failed"; exit 1; }
-
   deploy:
     name: Deploy Application
     runs-on: self-hosted
-    needs: build
     environment:
       name: production
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{secrets.DOCKER_USERNAME}}
+        password: ${{secrets.DOCKER_PASSWORD}}
+
+    - name: Tags Docker image
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{secrets.DOCKER_USERNAME}}/discord-bot
+
+    - name: Build and push to Docker Hub
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: true
+        tags: ${{steps.meta.outputs.tags}}
 
     - name: Deploy Discord Bot
       env:
@@ -55,5 +47,7 @@ jobs:
         SPOTIPY_CLIENT_ID: ${{ secrets.SPOTIPY_CLIENT_ID }}
       run: |
         echo "Starting Deployment..."
-        tmux new-session -d -s bot_session 'uv run main.py' || { echo "Deployment failed"; exit 1; }
+        docker pull ${{steps.meta.outputs.tags}}
+        docker rm -f discord-bot &>/dev/null
+        docker run -it -v /home/discordbot-logs:/app/logs -e TOKEN=${{env.TOKEN}} SPOTIPY_CLIENT_ID=${{ENV.SPOTIPY_CLIENT_ID}} SPOTIPY_CLIENT_SECRET=${{env.SPOTIPY_CLIENT_SECRET}} -d --name discord-bot ${{steps.meta.outputs.tags}}
         echo "Deployment completed successfully!"
