@@ -60,6 +60,10 @@ jobs:
       name: production
     
     steps:
+    - name: Debug Image Tag
+      run: |
+        echo "Image Tag: ${{ needs.build.outputs.image-tag }}"
+    
     - name: Deploy Discord Bot
       env:
         TOKEN: ${{ secrets.TOKEN }}
@@ -67,7 +71,18 @@ jobs:
         SPOTIPY_CLIENT_ID: ${{ secrets.SPOTIPY_CLIENT_ID }}
       run: |
         echo "Starting Deployment..."
+        echo "Pulling image: ${{ needs.build.outputs.image-tag }}"
         docker pull ${{ needs.build.outputs.image-tag }}
-        docker rm -f discord-bot &>/dev/null
-        docker run -it -v /home/discordbot-logs:/app/logs -e TOKEN=${{env.TOKEN}} SPOTIPY_CLIENT_ID=${{ENV.SPOTIPY_CLIENT_ID}} SPOTIPY_CLIENT_SECRET=${{env.SPOTIPY_CLIENT_SECRET}} -d --name discord-bot ${{ needs.build.outputs.image-tag }}
+        
+        echo "Removing existing container if present..."
+        docker ps -a
+        docker rm -f discord-bot || echo "No existing container to remove."
+
+        echo "Running the container..."
+        docker run -it -v /home/discordbot-logs:/app/logs \
+          -e TOKEN=${{ env.TOKEN }} \
+          -e SPOTIPY_CLIENT_ID=${{ env.SPOTIPY_CLIENT_ID }} \
+          -e SPOTIPY_CLIENT_SECRET=${{ env.SPOTIPY_CLIENT_SECRET }} \
+          -d --name discord-bot ${{ needs.build.outputs.image-tag }}
+
         echo "Deployment completed successfully!"
