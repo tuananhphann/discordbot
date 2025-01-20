@@ -12,9 +12,9 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
-    name: Deploy Application
-    runs-on: self-hosted
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
     environment:
       name: production
 
@@ -47,7 +47,14 @@ jobs:
         context: .
         push: true
         tags: ${{steps.meta.outputs.tags}}
-
+        
+  deploy:
+    name: Deploy Application
+    runs-on: self-hosted
+    environment:
+      name: production
+    
+    steps:
     - name: Deploy Discord Bot
       env:
         TOKEN: ${{ secrets.TOKEN }}
