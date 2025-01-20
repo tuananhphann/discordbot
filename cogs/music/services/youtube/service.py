@@ -2,10 +2,10 @@ import json
 import logging
 
 from patterns.singleton import SingletonMeta
-from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.common.by import By
 from seleniumwire import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
 
 _log = logging.getLogger(__name__)
 
@@ -14,11 +14,11 @@ class YoutubeService(metaclass=SingletonMeta):
 
     @staticmethod
     def getPoToken() -> tuple[str, str]:
-        options = webdriver.ChromeOptions()
+        options = webdriver.FirefoxOptions()
         options.add_argument("--headless")
 
-        driver = webdriver.Chrome(
-            service=ChromeService(ChromeDriverManager().install()), options=options
+        driver = webdriver.Firefox(
+            service=FirefoxService(GeckoDriverManager().install()), options=options
         )
         _log.info("YouTube: Getting PoToken...")
         driver.get("https://www.youtube.com/embed/aqz-KE-bpKQ")
