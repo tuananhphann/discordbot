@@ -39,7 +39,7 @@ jobs:
     - name: Tags Docker image
       uses: docker/metadata-action@v5
       with:
-        images: ${{secrets.DOCKER_USERNAME}}/discord-bot
+        images: ${{vars.DOCKERHUB_USERNAME}}/discord-bot
 
     - name: Build and push to Docker Hub
       uses: docker/build-push-action@v6
