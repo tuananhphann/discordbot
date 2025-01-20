@@ -51,4 +51,4 @@ jobs:
     steps:
       - name: Deploy Discord Bot to local server
         run: |
-          uv run main.py
+          tmux new-session -d -s bot_session 'uv run main.py'
