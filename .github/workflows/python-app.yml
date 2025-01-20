@@ -72,14 +72,14 @@ jobs:
       run: |
         echo "Starting Deployment..."
         echo "Pulling image: ${{ needs.build.outputs.image-tag }}"
-        sudo docker pull ${{ needs.build.outputs.image-tag }}
+        docker pull ${{ needs.build.outputs.image-tag }}
         
         echo "Removing existing container if present..."
-        sudo docker ps -a
-        sudo docker rm -f discord-bot || echo "No existing container to remove."
+        docker ps -a
+        docker rm -f discord-bot || echo "No existing container to remove."
 
         echo "Running the container..."
-        sudo docker run -it -v /home/discordbot-logs:/app/logs \
+        docker run -it -v /home/discordbot-logs:/app/logs \
           -e TOKEN=${{ env.TOKEN }} \
           -e SPOTIPY_CLIENT_ID=${{ env.SPOTIPY_CLIENT_ID }} \
           -e SPOTIPY_CLIENT_SECRET=${{ env.SPOTIPY_CLIENT_SECRET }} \
