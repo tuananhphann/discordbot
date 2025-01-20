@@ -14,10 +14,10 @@ class YoutubeService(metaclass=SingletonMeta):
 
     @staticmethod
     def getPoToken() -> tuple[str, str]:
-        options = webdriver.FirefoxOptions()
+        options = webdriver.ChromeOptions()
         options.add_argument("--headless")
 
-        driver = webdriver.Firefox(
+        driver = webdriver.Chrome(
             service=ChromeService(ChromeDriverManager().install()), options=options
         )
         _log.info("YouTube: Getting PoToken...")
