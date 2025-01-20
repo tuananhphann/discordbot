@@ -76,7 +76,7 @@ jobs:
         
         echo "Removing existing container if present..."
         docker ps -a
-        docker rm -f ${{vars.DOCKERHUB_USERNAME}}/discord-bot || echo "No existing container to remove."
+        docker rm -f discord-bot || echo "No existing container to remove."
 
         echo "Running the container..."
         docker run -it -v /home/discordbot-logs:/app/logs \
