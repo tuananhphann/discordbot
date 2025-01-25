@@ -10,7 +10,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 _log = logging.getLogger(__name__)
 
 
-class YoutubeService(metaclass=SingletonMeta):
+class YouTubeService(metaclass=SingletonMeta):
 
     @staticmethod
     def getPoToken(_: None = None) -> tuple[str, str]:

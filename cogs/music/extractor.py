@@ -13,7 +13,7 @@ from cogs.music.core.song import (
 from cogs.music.services.soundcloud.service import SoundCloudService
 from cogs.music.services.spotify import album, playlist, search, track
 from cogs.music.services.spotify.service import SpotifyService
-from cogs.music.services.youtube.service import YoutubeService
+from cogs.music.services.youtube.service import YouTubeService
 from core.exceptions import ExtractException
 from discord.ext import commands
 from pytubefix import Playlist, Search, YouTube
@@ -65,7 +65,7 @@ class YoutubeExtractor(Extractor):
         self, query: str, ctx, is_search=False, is_playlist=False, limit=1
     ) -> List[YouTubeSongMeta] | None:
         if is_search:
-            results = Search(query, po_token_verifier=YoutubeService.getPoToken, use_po_token=True).videos
+            results = Search(query, po_token_verifier=YouTubeService.getPoToken, use_po_token=True).videos
             if results:
                 songs = await asyncio.gather(
                     *[
@@ -77,7 +77,7 @@ class YoutubeExtractor(Extractor):
             return None
 
         if is_playlist:
-            playlist = Playlist(query, po_token_verifier=YoutubeService.getPoToken, use_po_token=True)
+            playlist = Playlist(query, po_token_verifier=YouTubeService.getPoToken, use_po_token=True)
             songs = await asyncio.gather(
                 *[
                     self.create_song_metadata(video, ctx, playlist.title)
@@ -87,7 +87,7 @@ class YoutubeExtractor(Extractor):
             return songs
         else:
             try:
-                yt = YouTube(query, po_token_verifier=YoutubeService.getPoToken, use_po_token=True)
+                yt = YouTube(query, po_token_verifier=YouTubeService.getPoToken, use_po_token=True)
 
             except VideoUnavailable:
                 return None

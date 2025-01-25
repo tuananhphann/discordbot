@@ -7,6 +7,7 @@ from cogs.music.core.album import Album
 from cogs.music.services.soundcloud.service import SoundCloudService
 from cogs.music.services.spotify import track
 from cogs.music.services.spotify.service import SpotifyService
+from cogs.music.services.youtube.service import YouTubeService
 from discord.ext import commands
 from pytubefix import Search, YouTube
 from pytubefix.exceptions import VideoUnavailable
@@ -148,6 +149,8 @@ async def createSong(song_meta: SongMeta) -> Union[Song, None]:
 @createSong.register  # type: ignore
 async def _(song_meta: YouTubeSongMeta) -> Union[Song, None]:
     video = YouTube.from_id(song_meta.video_id)
+    video.use_po_token = True
+    video.po_token_verifier = YouTubeService.getPoToken
     try:
         video.check_availability()
     except VideoUnavailable:
