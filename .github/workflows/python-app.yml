@@ -71,6 +71,9 @@ jobs:
         SPOTIPY_CLIENT_ID: ${{ secrets.SPOTIPY_CLIENT_ID }}
       run: |
         echo "Starting Deployment..."
+        echo "Removing existing image if present..."
+        docker rmi -f ${{ needs.build.outputs.image-tag }} || echo "No existing image to remove."
+
         echo "Pulling image: ${{ needs.build.outputs.image-tag }}"
         docker pull ${{ needs.build.outputs.image-tag }}
         
