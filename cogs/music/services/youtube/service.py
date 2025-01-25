@@ -13,7 +13,7 @@ _log = logging.getLogger(__name__)
 class YoutubeService(metaclass=SingletonMeta):
 
     @staticmethod
-    def getPoToken() -> tuple[str, str]:
+    def getPoToken(_: None = None) -> tuple[str, str]:
         options = webdriver.FirefoxOptions()
         options.add_argument("--headless")
 

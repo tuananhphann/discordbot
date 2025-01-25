@@ -87,9 +87,7 @@ class YoutubeExtractor(Extractor):
             return songs
         else:
             try:
-                yt = YouTube(query)
-                yt.po_token_verifier = YoutubeService.getPoToken
-                yt.use_po_token = True
+                yt = YouTube(query, po_token_verifier=YoutubeService.getPoToken, use_po_token=True)
             except VideoUnavailable:
                 return None
 
