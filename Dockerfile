@@ -1,36 +1,37 @@
-# Stage 1: Build
-FROM python:3.12-slim-bookworm AS builder
+# Stage 1: Build Python dependencies
+FROM python:3.12-slim-bookworm AS python-builder
 
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -Ur requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Stage 2: Runtime
+RUN pip install --no-cache-dir --upgrade pip
+
+COPY pyproject.toml ./
+
+RUN pip install --no-cache-dir --prefix=/install .
+
+# Stage 2: Runtime environment
 FROM python:3.12-slim-bookworm
+
+# Set timezone
 ENV TZ=Asia/Ho_Chi_Minh
 
 WORKDIR /app
 
-# Install minimal dependencies in a single layer
+# Install runtime dependencies in a single step
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
-    wget \
-    # Firefox dependencies
-    firefox-esr \
-    libx11-xcb1 \
-    libdbus-glib-1-2 \
-    xvfb \
-    # Clean up in the same layer
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && rm -rf /var/cache/apt/archives/*
+    nodejs &&\
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy only necessary Python packages from builder
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+# Copy Python dependencies from the builder stage
+COPY --from=python-builder /install /usr/local
 
 # Copy application code
 COPY . .
 
+# Set the default command
 CMD ["python", "main.py"]
