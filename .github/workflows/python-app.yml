@@ -25,11 +25,6 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
     
-    - name: Debug Docker Hub Credentials
-      run: |
-        echo "DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}"
-        echo "DOCKERHUB_TOKEN present: ${{ secrets.DOCKERHUB_TOKEN }}"
-    
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
@@ -60,10 +55,6 @@ jobs:
       name: production
     
     steps:
-    - name: Debug Image Tag
-      run: |
-        echo "Image Tag: ${{ needs.build.outputs.image-tag }}"
-    
     - name: Deploy Discord Bot
       env:
         TOKEN: ${{ secrets.TOKEN }}
@@ -78,7 +69,6 @@ jobs:
         docker pull ${{ needs.build.outputs.image-tag }}
         
         echo "Removing existing container if present..."
-        docker ps -a
         docker rm -f discord-bot || echo "No existing container to remove."
 
         echo "Running the container..."
