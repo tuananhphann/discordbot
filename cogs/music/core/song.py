@@ -148,7 +148,7 @@ async def createSong(song_meta: SongMeta) -> Union[Song, None]:
 @createSong.register  # type: ignore
 async def _(song_meta: YouTubeSongMeta) -> Union[Song, None]:
     url = f"https://www.youtube.com/watch?v={song_meta.video_id}"
-    video = YouTube(url, "WEB")
+    video = YouTube(url, client="WEB")
     try:
         video.check_availability()
     except VideoUnavailable:
@@ -201,7 +201,7 @@ async def _(song_meta: SpotifySongMeta) -> Union[Song, None]:
 
     query = f"'{song.name} + {','.join(artist.name for artist in song.artists)}' music"
     video = None  # type: ignore
-    videos = Search(query).videos
+    videos = Search(query, client="WEB").videos
     _logger.info(f'Creating Spotify song: Searching for "{query}"')
 
     for vid in videos:
@@ -249,7 +249,7 @@ async def get_songs_info(songs_need_to_update: List[SongMeta]) -> List[SongMeta]
 
     # Get YouTube info
     for song in yt_songs:
-        video = YouTube.from_id(song.video_id)
+        video = YouTube(f"https://www.youtube.com/watch?v={song.video_id}", client="WEB")
         song.update_meta(video)
 
     # Get SoundCloud info

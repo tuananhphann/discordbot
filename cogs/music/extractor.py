@@ -64,7 +64,7 @@ class YoutubeExtractor(Extractor):
         self, query: str, ctx, is_search=False, is_playlist=False, limit=1
     ) -> List[YouTubeSongMeta] | None:
         if is_search:
-            results = Search(query, "WEB").videos
+            results = Search(query, client="WEB").videos
             if results:
                 songs = await asyncio.gather(
                     *[
@@ -76,7 +76,7 @@ class YoutubeExtractor(Extractor):
             return None
 
         if is_playlist:
-            playlist = Playlist(query, "WEB")
+            playlist = Playlist(query, client="WEB")
             songs = await asyncio.gather(
                 *[
                     self.create_song_metadata(video, ctx, playlist.title)
@@ -86,7 +86,7 @@ class YoutubeExtractor(Extractor):
             return songs
         else:
             try:
-                yt = YouTube(query, "WEB")
+                yt = YouTube(query, client="WEB")
 
             except VideoUnavailable:
                 return None
