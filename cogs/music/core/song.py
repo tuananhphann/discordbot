@@ -199,7 +199,7 @@ async def _(song_meta: SpotifySongMeta) -> Union[Song, None]:
     sp_service = SpotifyService()
     song = sp_service.get_track(song_meta.track_id)
 
-    query = f"'{song.name} + {','.join(artist.name for artist in song.artists)}' music"
+    query = f"'{','.join(artist.name for artist in song.artists)}' '{song.name}' Topic YouTube Music"
     video = None  # type: ignore
     videos = Search(query, client="WEB").videos
     _logger.info(f'Creating Spotify song: Searching for "{query}"')
